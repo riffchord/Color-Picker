@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Färgval</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            width: 100vw;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s ease;
+        }
+        .menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 10px;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+        .menu button {
+            margin: 5px;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .menu:hover {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="menu">
+        <!-- Lila Tema -->
+        <button style="background: #45005C; color: white;" onclick="changeColor('#45005C')">Lila</button>
+        <button style="background: #FF3D9C; color: white;" onclick="changeColor('#FF3D9C')">Lila Komplement 1</button>
+        <button style="background: #D63385; color: white;" onclick="changeColor('#D63385')">Lila Komplement 2</button>
+        
+        <!-- Grönt Tema -->
+        <button style="background: #00555C; color: white;" onclick="changeColor('#00555C')">Grön</button>
+        <button style="background: #A6CF38; color: black;" onclick="changeColor('#A6CF38')">Grön Komplement 1</button>
+        <button style="background: #008A00; color: white;" onclick="changeColor('#008A00')">Grön Komplement 2</button>
+        
+        <!-- Blått Tema -->
+        <button style="background: #262262; color: white;" onclick="changeColor('#262262')">Blå</button>
+        <button style="background: #1C9CD9; color: black;" onclick="changeColor('#1C9CD9')">Blå Komplement 1</button>
+        <button style="background: #177DB0; color: white;" onclick="changeColor('#177DB0')">Blå Komplement 2</button>
+        
+        <!-- Grått Tema -->
+        <button style="background: #202E45; color: white;" onclick="changeColor('#202E45')">Grå</button>
+        <button style="background: #859E96; color: black;" onclick="changeColor('#859E96')">Grå Komplement 1</button>
+        <button style="background: #667A75; color: white;" onclick="changeColor('#667A75')">Grå Komplement 2</button>
+        
+        <!-- Signalfärg -->
+        <button style="background: #FFDD00; color: black;" onclick="changeColor('#FFDD00')">Gul</button>
+        
+        <!-- Vit -->
+        <button style="background: #FFFFFF; color: black; border: 1px solid black;" onclick="changeColor('#FFFFFF')">Vit</button>
+    </div>
+    <script>
+        function changeColor(color) {
+            document.body.style.backgroundColor = color;
+        }
+        document.body.addEventListener('mousemove', function(event) {
+            if (event.clientY < 50) {
+                document.querySelector('.menu').style.transform = 'translateY(0)';
+            } else {
+                document.querySelector('.menu').style.transform = 'translateY(-100%)';
+            }
+        });
+    </script>
+</body>
+</html>
