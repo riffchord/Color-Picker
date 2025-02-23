@@ -167,6 +167,19 @@
         input[type="checkbox"] {
             cursor: pointer;
         }
+
+        .color-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="color"] {
+            width: 50px;
+            height: 30px;
+            padding: 0;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -190,23 +203,30 @@
             </div>
             <div class="input-group">
                 <label for="colorSelect">Color:</label>
-                <select id="colorSelect" onchange="updateColor()">
-                    <option value="#45005C">Purple</option>
-                    <option value="#FF3D9C">Purple Complement 1</option>
-                    <option value="#D63385">Purple Complement 2</option>
-                    <option value="#00555C">Green</option>
-                    <option value="#A6CF38">Green Complement 1</option>
-                    <option value="#008A00">Green Complement 2</option>
-                    <option value="#262262">Blue</option>
-                    <option value="#1C9CD9">Blue Complement 1</option>
-                    <option value="#177DB0">Blue Complement 2</option>
-                    <option value="#202E45">Gray</option>
-                    <option value="#859E96">Gray Complement 1</option>
-                    <option value="#667A75">Gray Complement 2</option>
-                    <option value="#FFDD00">Yellow</option>
-                    <option value="#FFFFFF">White</option>
-                    <option value="#000000" selected>Black</option>
-                </select>
+                <div class="color-input">
+                    <select id="colorSelect" onchange="handleColorChange()">
+                        <option value="custom">Custom Color</option>
+                        <option value="#45005C">Purple</option>
+                        <option value="#FF3D9C">Purple Complement 1</option>
+                        <option value="#D63385">Purple Complement 2</option>
+                        <option value="#00555C">Green</option>
+                        <option value="#A6CF38">Green Complement 1</option>
+                        <option value="#008A00">Green Complement 2</option>
+                        <option value="#262262">Blue</option>
+                        <option value="#1C9CD9">Blue Complement 1</option>
+                        <option value="#177DB0">Blue Complement 2</option>
+                        <option value="#202E45">Gray</option>
+                        <option value="#859E96">Gray Complement 1</option>
+                        <option value="#667A75">Gray Complement 2</option>
+                        <option value="#FFDD00">Yellow</option>
+                        <option value="#FFFFFF">White</option>
+                        <option value="#000000" selected>Black</option>
+                    </select>
+                    <input type="color" 
+                           id="customColorPicker" 
+                           style="display: none;" 
+                           onchange="handleCustomColor(this.value)">
+                </div>
             </div>
             <div class="input-group">
                 <label>Gradient:</label>
@@ -287,10 +307,14 @@
 
         function savePreset() {
             const number = document.getElementById('presetSelect').value;
+            let color = document.getElementById('colorSelect').value;
+            if (color === 'custom') {
+                color = document.getElementById('customColorPicker').value;
+            }
             presets[number] = {
                 name: nameInput.value,
                 title: titleInput.value,
-                color: document.getElementById('colorSelect').value,
+                color: color,
                 position: currentPosition,
                 radius: document.getElementById('cornerRadius').value,
                 gradientEnabled: document.getElementById('gradientToggle').checked,
@@ -311,7 +335,18 @@
             if (preset) {
                 nameInput.value = preset.name;
                 titleInput.value = preset.title;
-                document.getElementById('colorSelect').value = preset.color;
+                if (preset.color.startsWith('#')) {
+                    const select = document.getElementById('colorSelect');
+                    const colorPicker = document.getElementById('customColorPicker');
+                    if (Object.values(select.options).some(opt => opt.value === preset.color)) {
+                        select.value = preset.color;
+                        colorPicker.style.display = 'none';
+                    } else {
+                        select.value = 'custom';
+                        colorPicker.value = preset.color;
+                        colorPicker.style.display = 'block';
+                    }
+                }
                 document.getElementById('cornerRadius').value = preset.radius || '8';
                 document.getElementById('gradientToggle').checked = preset.gradientEnabled || false;
                 document.getElementById('darknessSlider').value = preset.darknessFactor || '40';
@@ -360,7 +395,17 @@
         document.addEventListener('DOMContentLoaded', function() {
             nameInput.value = currentName;
             titleInput.value = currentTitle;
-            document.getElementById('colorSelect').value = currentColor;
+            // Handle initial color
+            const colorSelect = document.getElementById('colorSelect');
+            const colorPicker = document.getElementById('customColorPicker');
+            if (Object.values(colorSelect.options).some(opt => opt.value === currentColor)) {
+                colorSelect.value = currentColor;
+                colorPicker.style.display = 'none';
+            } else {
+                colorSelect.value = 'custom';
+                colorPicker.value = currentColor;
+                colorPicker.style.display = 'block';
+            }
             document.getElementById('cornerRadius').value = currentRadius;
             document.getElementById('gradientToggle').checked = gradientEnabled;
             document.getElementById('darknessSlider').value = darknessFactor;
@@ -401,7 +446,10 @@
         }
 
         function updateColor() {
-            const color = document.getElementById('colorSelect').value;
+            let color = document.getElementById('colorSelect').value;
+            if (color === 'custom') {
+                color = document.getElementById('customColorPicker').value;
+            }
             if (document.getElementById('gradientToggle').checked) {
                 const darkerColor = darkenColor(color);
                 nametag.style.background = `linear-gradient(to bottom, ${hexToRgba(color, 0.8)}, ${hexToRgba(darkerColor, 0.8)})`;
@@ -459,6 +507,26 @@
             localStorage.setItem('nametagDarknessFactor', darknessFactor);
             updateColor();
         });
+
+        function handleColorChange() {
+            const select = document.getElementById('colorSelect');
+            const colorPicker = document.getElementById('customColorPicker');
+            
+            if (select.value === 'custom') {
+                colorPicker.style.display = 'block';
+                colorPicker.click(); // Open the color picker
+            } else {
+                colorPicker.style.display = 'none';
+                updateColor();
+            }
+        }
+
+        function handleCustomColor(color) {
+            const select = document.getElementById('colorSelect');
+            select.value = 'custom';
+            document.getElementById('customColorPicker').value = color;
+            updateColor();
+        }
     </script>
 </body>
 </html> 
