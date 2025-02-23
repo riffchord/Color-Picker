@@ -46,17 +46,21 @@
         .controls {
             width: 100%;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            gap: 15px;
             margin-top: 10px;
         }
         
         .gradient-control {
-            color: white;
-            margin-left: 15px;
+            width: 100%;
             display: flex;
+            justify-content: center;
             align-items: center;
             gap: 15px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .darkness-slider {
@@ -68,38 +72,74 @@
         input[type="range"] {
             width: 100px;
         }
+
+        .template-selector {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .template-selector select {
+            padding: 5px;
+            font-family: 'Source Sans Pro', sans-serif;
+        }
+
+        #customColorControls {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #customColorControls button {
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: 'Source Sans Pro', sans-serif;
+            background: #1C9CD9;
+            color: white;
+            border: none;
+            border-radius: 3px;
+        }
+
+        input[type="color"] {
+            width: 50px;
+            height: 30px;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        #colorButtons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
     <div class="menu">
-        <!-- Lila Tema -->
-        <button style="background: #45005C; color: white;" onclick="changeColor('#45005C')">Lila</button>
-        <button style="background: #FF3D9C; color: white;" onclick="changeColor('#FF3D9C')">Lila Komplement 1</button>
-        <button style="background: #D63385; color: white;" onclick="changeColor('#D63385')">Lila Komplement 2</button>
-        
-        <!-- Grönt Tema -->
-        <button style="background: #00555C; color: white;" onclick="changeColor('#00555C')">Grön</button>
-        <button style="background: #A6CF38; color: black;" onclick="changeColor('#A6CF38')">Grön Komplement 1</button>
-        <button style="background: #008A00; color: white;" onclick="changeColor('#008A00')">Grön Komplement 2</button>
-        
-        <!-- Blått Tema -->
-        <button style="background: #262262; color: white;" onclick="changeColor('#262262')">Blå</button>
-        <button style="background: #1C9CD9; color: black;" onclick="changeColor('#1C9CD9')">Blå Komplement 1</button>
-        <button style="background: #177DB0; color: white;" onclick="changeColor('#177DB0')">Blå Komplement 2</button>
-        
-        <!-- Grått Tema -->
-        <button style="background: #202E45; color: white;" onclick="changeColor('#202E45')">Grå</button>
-        <button style="background: #859E96; color: black;" onclick="changeColor('#859E96')">Grå Komplement 1</button>
-        <button style="background: #667A75; color: white;" onclick="changeColor('#667A75')">Grå Komplement 2</button>
-        
-        <!-- Signalfärg -->
-        <button style="background: #FFDD00; color: black;" onclick="changeColor('#FFDD00')">Gul</button>
-        
-        <!-- Vit -->
-        <button style="background: #FFFFFF; color: black; border: 1px solid black;" onclick="changeColor('#FFFFFF')">Vit</button>
-
-        <!-- Controls -->
         <div class="controls">
+            <div class="template-selector">
+                <label>Färgmall:</label>
+                <select id="templateSelect" onchange="switchTemplate()">
+                    <option value="uppsala">Uppsala Kommun</option>
+                    <option value="custom">Egna Färger</option>
+                </select>
+            </div>
+
+            <!-- Add custom color picker section -->
+            <div id="customColorControls" style="display: none;">
+                <input type="color" id="colorPicker" onchange="addCustomColor(this.value)">
+                <button onclick="addCustomColor(document.getElementById('colorPicker').value)">Lägg till färg</button>
+            </div>
+
+            <!-- Color buttons container -->
+            <div id="colorButtons">
+                <!-- Buttons will be created by JavaScript -->
+            </div>
+
+            <!-- Gradient controls -->
             <div class="gradient-control">
                 <div>
                     <input type="checkbox" id="gradientToggle">
@@ -117,12 +157,18 @@
         let gradientEnabled = localStorage.getItem('gradientEnabled') === 'true';
         let darknessFactor = localStorage.getItem('darknessFactor') || 40;
         
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('gradientToggle').checked = gradientEnabled;
-            document.getElementById('darknessSlider').value = darknessFactor;
-            applyColor(currentColor);
-        });
+        // Add to existing variables
+        const uppsalaColors = {
+            // Original Uppsala Kommun colors
+            lila: ['#45005C', '#FF3D9C', '#D63385'],
+            gron: ['#00555C', '#A6CF38', '#008A00'],
+            bla: ['#262262', '#1C9CD9', '#177DB0'],
+            gra: ['#202E45', '#859E96', '#667A75'],
+            signal: ['#FFDD00'],
+            basic: ['#FFFFFF', '#000000']
+        };
+
+        const customColors = JSON.parse(localStorage.getItem('customColors')) || [];
 
         function darkenColor(color) {
             let r = parseInt(color.slice(1,3), 16);
@@ -177,6 +223,110 @@
             } else {
                 menu.style.transform = 'translateY(-100%)';
             }
+        });
+
+        function switchTemplate() {
+            const template = document.getElementById('templateSelect').value;
+            const customControls = document.getElementById('customColorControls');
+            const colorButtons = document.getElementById('colorButtons');
+            
+            colorButtons.innerHTML = '';
+            
+            if (template === 'uppsala') {
+                customControls.style.display = 'none';
+                createUppsalaButtons();
+            } else {
+                customControls.style.display = 'flex';
+                createCustomButtons();
+            }
+        }
+
+        function createUppsalaButtons() {
+            const colorButtons = document.getElementById('colorButtons');
+            
+            Object.values(uppsalaColors).flat().forEach(color => {
+                const button = createColorButton(color);
+                colorButtons.appendChild(button);
+            });
+        }
+
+        function createCustomButtons() {
+            const colorButtons = document.getElementById('colorButtons');
+            
+            customColors.forEach(color => {
+                const buttonContainer = document.createElement('div');
+                buttonContainer.style.position = 'relative';
+                
+                const button = createColorButton(color);
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.innerHTML = '×';
+                deleteBtn.style.position = 'absolute';
+                deleteBtn.style.top = '-5px';
+                deleteBtn.style.right = '-5px';
+                deleteBtn.style.borderRadius = '50%';
+                deleteBtn.style.padding = '0 5px';
+                deleteBtn.style.background = 'red';
+                deleteBtn.style.color = 'white';
+                deleteBtn.style.border = 'none';
+                deleteBtn.style.cursor = 'pointer';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    removeCustomColor(color);
+                };
+                
+                buttonContainer.appendChild(button);
+                buttonContainer.appendChild(deleteBtn);
+                colorButtons.appendChild(buttonContainer);
+            });
+        }
+
+        function createColorButton(color) {
+            const button = document.createElement('button');
+            button.style.background = color;
+            button.style.color = isLightColor(color) ? 'black' : 'white';
+            button.onclick = () => changeColor(color);
+            button.style.margin = '5px';
+            button.style.padding = '10px';
+            button.style.border = 'none';
+            button.style.cursor = 'pointer';
+            button.style.minWidth = '60px';
+            button.style.minHeight = '30px';
+            return button;
+        }
+
+        function addCustomColor(color) {
+            if (!customColors.includes(color)) {
+                customColors.push(color);
+                localStorage.setItem('customColors', JSON.stringify(customColors));
+                switchTemplate(); // Refresh the buttons
+            }
+        }
+
+        function removeCustomColor(color) {
+            const index = customColors.indexOf(color);
+            if (index > -1) {
+                customColors.splice(index, 1);
+                localStorage.setItem('customColors', JSON.stringify(customColors));
+                switchTemplate(); // Refresh the buttons
+            }
+        }
+
+        function isLightColor(color) {
+            const hex = color.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            const brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            return brightness > 128;
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('gradientToggle').checked = gradientEnabled;
+            document.getElementById('darknessSlider').value = darknessFactor;
+            applyColor(currentColor);
+            createUppsalaButtons();
         });
     </script>
 </body>
