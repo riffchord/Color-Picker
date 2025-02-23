@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600&display=swap" rel="stylesheet">
-    <title>Namnplatta</title>
+    <title>Name Tag Generator</title>
     <style>
         body {
             margin: 0;
@@ -173,39 +173,39 @@
     <div class="menu">
         <div class="controls">
             <div class="input-group">
-                <label for="nameInput">Namn:</label>
-                <input type="text" id="nameInput" placeholder="Skriv namn">
+                <label for="nameInput">Name:</label>
+                <input type="text" id="nameInput" placeholder="Enter name">
             </div>
             <div class="input-group">
-                <label for="titleInput">Titel:</label>
-                <input type="text" id="titleInput" placeholder="Skriv titel">
+                <label for="titleInput">Title:</label>
+                <input type="text" id="titleInput" placeholder="Enter title">
             </div>
             <div class="input-group">
                 <label>Position:</label>
                 <div class="position-buttons">
-                    <button onclick="setPosition('left')">Vänster</button>
-                    <button onclick="setPosition('center')">Mitten</button>
-                    <button onclick="setPosition('right')">Höger</button>
+                    <button onclick="setPosition('left')">Left</button>
+                    <button onclick="setPosition('center')">Center</button>
+                    <button onclick="setPosition('right')">Right</button>
                 </div>
             </div>
             <div class="input-group">
-                <label for="colorSelect">Färg:</label>
+                <label for="colorSelect">Color:</label>
                 <select id="colorSelect" onchange="updateColor()">
-                    <option value="#45005C">Lila</option>
-                    <option value="#FF3D9C">Lila Komplement 1</option>
-                    <option value="#D63385">Lila Komplement 2</option>
-                    <option value="#00555C">Grön</option>
-                    <option value="#A6CF38">Grön Komplement 1</option>
-                    <option value="#008A00">Grön Komplement 2</option>
-                    <option value="#262262">Blå</option>
-                    <option value="#1C9CD9">Blå Komplement 1</option>
-                    <option value="#177DB0">Blå Komplement 2</option>
-                    <option value="#202E45">Grå</option>
-                    <option value="#859E96">Grå Komplement 1</option>
-                    <option value="#667A75">Grå Komplement 2</option>
-                    <option value="#FFDD00">Gul</option>
-                    <option value="#FFFFFF">Vit</option>
-                    <option value="#000000" selected>Svart</option>
+                    <option value="#45005C">Purple</option>
+                    <option value="#FF3D9C">Purple Complement 1</option>
+                    <option value="#D63385">Purple Complement 2</option>
+                    <option value="#00555C">Green</option>
+                    <option value="#A6CF38">Green Complement 1</option>
+                    <option value="#008A00">Green Complement 2</option>
+                    <option value="#262262">Blue</option>
+                    <option value="#1C9CD9">Blue Complement 1</option>
+                    <option value="#177DB0">Blue Complement 2</option>
+                    <option value="#202E45">Gray</option>
+                    <option value="#859E96">Gray Complement 1</option>
+                    <option value="#667A75">Gray Complement 2</option>
+                    <option value="#FFDD00">Yellow</option>
+                    <option value="#FFFFFF">White</option>
+                    <option value="#000000" selected>Black</option>
                 </select>
             </div>
             <div class="input-group">
@@ -213,30 +213,30 @@
                 <div class="gradient-control">
                     <div>
                         <input type="checkbox" id="gradientToggle">
-                        <label for="gradientToggle">Använd gradient</label>
+                        <label for="gradientToggle">Use Gradient</label>
                     </div>
                     <div class="darkness-slider">
-                        <label for="darknessSlider">Mörkhet:</label>
+                        <label for="darknessSlider">Darkness:</label>
                         <input type="range" id="darknessSlider" min="10" max="100" value="40">
                     </div>
                 </div>
             </div>
             <div class="input-group">
-                <label for="cornerRadius">Rundade hörn:</label>
+                <label for="cornerRadius">Rounded Corners:</label>
                 <input type="range" id="cornerRadius" min="0" max="20" value="8" oninput="updateCorners()">
             </div>
             <div class="input-group">
-                <label>Förval:</label>
+                <label>Presets:</label>
                 <div class="preset-controls">
                     <select id="presetSelect" onchange="loadSelectedPreset()">
-                        <option value="1">Förval 1</option>
-                        <option value="2">Förval 2</option>
-                        <option value="3">Förval 3</option>
-                        <option value="4">Förval 4</option>
-                        <option value="5">Förval 5</option>
+                        <option value="1">Preset 1</option>
+                        <option value="2">Preset 2</option>
+                        <option value="3">Preset 3</option>
+                        <option value="4">Preset 4</option>
+                        <option value="5">Preset 5</option>
                     </select>
                     <div class="preset-buttons">
-                        <button class="save-btn" onclick="savePreset()">Spara</button>
+                        <button class="save-btn" onclick="savePreset()">Save</button>
                     </div>
                 </div>
             </div>
@@ -280,7 +280,7 @@
                 if (preset && preset.name) {
                     option.textContent = `${i}. ${preset.name}`;
                 } else {
-                    option.textContent = `Förval ${i}`;
+                    option.textContent = `Preset ${i}`;
                 }
             }
         }
@@ -298,7 +298,7 @@
             };
             localStorage.setItem('nametagPresets', JSON.stringify(presets));
             updatePresetDropdown();
-            alert(`Förval ${number} sparat!`);
+            alert(`Preset ${number} saved!`);
         }
 
         function loadSelectedPreset() {

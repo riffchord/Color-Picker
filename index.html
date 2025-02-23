@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600&display=swap" rel="stylesheet">
-    <title>Tricaster Verktyg</title>
+    <title>Tricaster Tools</title>
     <style>
         body {
             font-family: 'Source Sans Pro', sans-serif;
@@ -72,59 +72,59 @@
     </style>
 </head>
 <body>
-    <h1>Tricaster Verktyg</h1>
+    <h1>Tricaster Tools</h1>
     
     <div class="tool-card">
-        <h2>Färgväljare</h2>
-        <p>Ett verktyg för att ställa in bakgrundsfärg i Tricaster.</p>
+        <h2>Color Background</h2>
+        <p>A tool for setting background colors in Tricaster.</p>
         <ul>
-            <li>Välj mellan fördefinierade färger</li>
-            <li>Lägg till gradient-effekt</li>
-            <li>Justera gradient-mörkhet</li>
-            <li>Inställningar sparas automatiskt</li>
+            <li>Choose from predefined colors</li>
+            <li>Add gradient effects</li>
+            <li>Adjust gradient darkness</li>
+            <li>Settings save automatically</li>
         </ul>
-        <a href="color-picker.html" class="tool-link">Öppna Färgväljare</a>
+        <a href="color-background.html" class="tool-link">Open Color Background</a>
     </div>
 
     <div class="tool-card">
-        <h2>Namnplatta</h2>
-        <p>Skapa och hantera namnplattor för sändning.</p>
+        <h2>Name Tag</h2>
+        <p>Create and manage name tags for broadcast.</p>
         <ul>
-            <li>Skriv namn och titel</li>
-            <li>Välj position (vänster, mitten, höger)</li>
-            <li>Anpassa färg och gradient</li>
-            <li>Spara upp till 5 förval för snabb åtkomst</li>
-            <li>Justera rundade hörn</li>
+            <li>Enter name and title</li>
+            <li>Choose position (left, center, right)</li>
+            <li>Customize color and gradient</li>
+            <li>Save up to 5 presets for quick access</li>
+            <li>Adjust rounded corners</li>
         </ul>
-        <a href="nametag.html" class="tool-link">Öppna Namnplatta</a>
+        <a href="nametag.html" class="tool-link">Open Name Tag</a>
     </div>
 
     <div class="companion-note">
         <h2>Bitfocus Companion Integration</h2>
-        <p>Båda verktygen kan styras via Companion med HTTP-requests:</p>
+        <p>Both tools can be controlled via Companion using HTTP requests:</p>
         
-        <h3>Namnplatta:</h3>
+        <h3>Name Tag:</h3>
         <ul>
-            <li>Ladda förval: <code>http://[IP]/nametag.html?tag=1</code> (1-5)</li>
-            <li>Ändra namn: <code>http://[IP]/nametag.html?name=John%20Doe</code></li>
-            <li>Ändra titel: <code>http://[IP]/nametag.html?title=Producer</code></li>
-            <li>Ändra position: <code>http://[IP]/nametag.html?position=left</code> (left/center/right)</li>
+            <li>Load preset: <code>http://[IP]/nametag.html?tag=1</code> (1-5)</li>
+            <li>Change name: <code>http://[IP]/nametag.html?name=John%20Doe</code></li>
+            <li>Change title: <code>http://[IP]/nametag.html?title=Producer</code></li>
+            <li>Change position: <code>http://[IP]/nametag.html?position=left</code> (left/center/right)</li>
         </ul>
 
-        <h3>Färgväljare:</h3>
+        <h3>Color Background:</h3>
         <ul>
-            <li>Ändra färg direkt genom att öppna sidan med vald färg</li>
-            <li>Exempel: <code>http://[IP]/color-picker.html</code></li>
+            <li>Change color directly by opening the page</li>
+            <li>Example: <code>http://[IP]/color-background.html</code></li>
         </ul>
     </div>
 
     <div class="tool-card">
         <h2>Tips</h2>
         <ul>
-            <li>Hovra över toppen av sidan för att visa kontrollpanelen i båda verktygen</li>
-            <li>Alla inställningar sparas automatiskt lokalt i webbläsaren</li>
-            <li>Förval i namnplattan kan namnges för enkel identifiering</li>
-            <li>Gradient-effekten kan användas i både färgväljaren och namnplattan</li>
+            <li>Hover at the top of the page to show the control panel in both tools</li>
+            <li>All settings are automatically saved in the browser</li>
+            <li>Name tag presets can be named for easy identification</li>
+            <li>Gradient effects can be used in both tools</li>
         </ul>
     </div>
 </body>
