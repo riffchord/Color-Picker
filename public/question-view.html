@@ -43,6 +43,8 @@
             color: var(--text-color);
             line-height: 1.6;
             overflow: hidden;
+            height: 100vh;
+            width: 100vw;
         }
 
         .controls {
@@ -58,22 +60,13 @@
             transition: transform 0.3s ease;
         }
 
-        .controls:hover, .controls.active {
+        /* Show controls only when hovering near the top of the screen */
+        .show-controls {
             transform: translateY(0);
         }
 
         .control-handle {
-            position: absolute;
-            bottom: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95);
-            padding: 5px 15px;
-            border-radius: 0 0 8px 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-            font-size: 12px;
-            color: var(--light-text);
+            display: none; /* Hide the control handle */
         }
 
         .control-row {
@@ -186,21 +179,23 @@
         }
 
         .question-container.lower-third {
-            top: 20px;
-            left: 20px;
+            top: calc(15% + 20px);
+            left: calc(15% + 20px);
             max-width: 450px;
+            z-index: 2;
         }
 
         .question-container.full-screen {
+            position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            max-width: 100%;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            z-index: 2;
         }
 
         .question-box {
@@ -217,21 +212,27 @@
         }
 
         .full-screen .question-box {
-            background: transparent;
+            background: transparent !important; /* Force transparency */
             box-shadow: none;
             flex-direction: column;
             text-align: center;
             padding: 0;
+            width: auto;
+            max-width: 80%;
+            position: absolute;
+            top: calc(50% - 48px); /* Offset by half the question mark height (96px/2) */
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         .question-icon {
-            font-size: 24px;
+            font-size: 48px; /* 2x bigger from original 24px */
             margin-right: 15px;
             color: var(--primary-color);
         }
 
         .full-screen .question-icon {
-            font-size: 48px;
+            font-size: 96px; /* 2x bigger from original 48px */
             margin-right: 0;
             margin-bottom: 20px;
         }
@@ -254,24 +255,29 @@
         }
 
         .session-info {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            color: var(--light-text);
-            z-index: 100;
+            display: none; /* Hide session info completely */
         }
 
         /* No question message - completely hidden when no question is on air */
         .no-question {
             display: none;
         }
+
+        /* Add a background overlay for fullscreen mode */
+        .fullscreen-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            display: none;
+        }
     </style>
 </head>
 <body>
+    <div class="fullscreen-background" id="fullscreen-background"></div>
+    
     <div class="session-info" id="session-info"></div>
 
     <div class="controls">
@@ -342,6 +348,20 @@
                 </div>
             </div>
         </div>
+        <div class="control-row">
+            <div class="control-group">
+                <div class="control-label">Position X: <span id="position-x-value">15</span>%</div>
+                <div class="slider-container">
+                    <input type="range" min="0" max="90" step="1" value="15" class="slider" id="position-x-slider">
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="control-label">Position Y: <span id="position-y-value">15</span>%</div>
+                <div class="slider-container">
+                    <input type="range" min="0" max="90" step="1" value="15" class="slider" id="position-y-slider">
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="question-container lower-third">
@@ -364,7 +384,9 @@
             cornerRadius: 8,
             textColor: '#ffffff',
             gradient: 'none',
-            gradientDarkness: 0.2
+            gradientDarkness: 0.2,
+            positionX: 15,
+            positionY: 15
         };
 
         // DOM elements
@@ -373,11 +395,31 @@
         const questionText = document.querySelector('.question-text');
         const noQuestion = document.querySelector('.no-question');
         const sessionInfo = document.getElementById('session-info');
+        const controls = document.querySelector('.controls');
         let currentQuestion = null;
+        let controlsTimeout;
+
+        // Add event listeners for showing/hiding controls based on mouse position
+        document.addEventListener('mousemove', function(e) {
+            // Show controls when mouse is near the top of the screen (within 50px)
+            if (e.clientY < 50) {
+                controls.classList.add('show-controls');
+                // Clear any existing timeout
+                if (controlsTimeout) {
+                    clearTimeout(controlsTimeout);
+                }
+            } else {
+                // Set a timeout to hide controls when mouse moves away
+                if (controlsTimeout) {
+                    clearTimeout(controlsTimeout);
+                }
+                controlsTimeout = setTimeout(() => {
+                    controls.classList.remove('show-controls');
+                }, 500);
+            }
+        });
 
         // Controls
-        const controls = document.querySelector('.controls');
-        const controlHandle = document.querySelector('.control-handle');
         const modeOptions = document.querySelectorAll('[data-mode]');
         const colorOptions = document.querySelectorAll('[data-color]');
         const textColorOptions = document.querySelectorAll('[data-text-color]');
@@ -388,11 +430,18 @@
         const radiusValue = document.getElementById('radius-value');
         const darknessSlider = document.getElementById('darkness-slider');
         const darknessValue = document.getElementById('darkness-value');
+        const positionXSlider = document.getElementById('position-x-slider');
+        const positionXValue = document.getElementById('position-x-value');
+        const positionYSlider = document.getElementById('position-y-slider');
+        const positionYValue = document.getElementById('position-y-value');
 
         // Toggle controls visibility
-        controlHandle.addEventListener('click', () => {
-            controls.classList.toggle('active');
-        });
+        const controlHandle = document.querySelector('.control-handle');
+        if (controlHandle) {
+            controlHandle.addEventListener('click', () => {
+                controls.classList.toggle('active');
+            });
+        }
 
         // Mode selection
         modeOptions.forEach(option => {
@@ -455,48 +504,73 @@
             applySettings();
         });
 
+        // Position X slider
+        positionXSlider.addEventListener('input', () => {
+            settings.positionX = parseInt(positionXSlider.value);
+            positionXValue.textContent = settings.positionX;
+            applySettings();
+        });
+
+        // Position Y slider
+        positionYSlider.addEventListener('input', () => {
+            settings.positionY = parseInt(positionYSlider.value);
+            positionYValue.textContent = settings.positionY;
+            applySettings();
+        });
+
         // Apply settings to the question box
         function applySettings() {
             // Apply display mode
             questionContainer.className = `question-container ${settings.mode}`;
             
-            // Apply background color and opacity
+            // Prepare color variables
             const baseColor = settings.backgroundColor;
+            let backgroundStyle = '';
             
-            if (settings.mode === 'full-screen') {
-                // For full-screen mode, apply the background to the body
-                if (settings.gradient === 'none') {
-                    document.body.style.background = `rgba(${hexToRgb(baseColor)}, ${settings.opacity})`;
-                } else if (settings.gradient === 'linear') {
-                    const darkColor = darkenColor(baseColor, settings.gradientDarkness);
-                    document.body.style.background = `linear-gradient(to bottom, rgba(${hexToRgb(baseColor)}, ${settings.opacity}), rgba(${hexToRgb(darkColor)}, ${settings.opacity}))`;
-                } else if (settings.gradient === 'radial') {
-                    const darkColor = darkenColor(baseColor, settings.gradientDarkness);
-                    document.body.style.background = `radial-gradient(circle, rgba(${hexToRgb(baseColor)}, ${settings.opacity}), rgba(${hexToRgb(darkColor)}, ${settings.opacity}))`;
-                }
-                
-                // Make the question box transparent in full-screen mode
-                questionBox.style.background = 'transparent';
-                questionBox.style.boxShadow = 'none';
-            } else {
-                // For lower-third mode, reset body background to transparent
-                document.body.style.background = 'transparent';
-                
-                // Apply background to the question box
-                if (settings.gradient === 'none') {
-                    questionBox.style.background = `rgba(${hexToRgb(baseColor)}, ${settings.opacity})`;
-                } else if (settings.gradient === 'linear') {
-                    const darkColor = darkenColor(baseColor, settings.gradientDarkness);
-                    questionBox.style.background = `linear-gradient(to bottom, rgba(${hexToRgb(baseColor)}, ${settings.opacity}), rgba(${hexToRgb(darkColor)}, ${settings.opacity}))`;
-                } else if (settings.gradient === 'radial') {
-                    const darkColor = darkenColor(baseColor, settings.gradientDarkness);
-                    questionBox.style.background = `radial-gradient(circle, rgba(${hexToRgb(baseColor)}, ${settings.opacity}), rgba(${hexToRgb(darkColor)}, ${settings.opacity}))`;
-                }
-                
-                questionBox.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+            // Create the background style based on gradient settings
+            if (settings.gradient === 'none') {
+                backgroundStyle = `rgba(${hexToRgb(baseColor)}, ${settings.opacity})`;
+            } else if (settings.gradient === 'linear') {
+                const darkColor = darkenColor(baseColor, settings.gradientDarkness);
+                backgroundStyle = `linear-gradient(to bottom, rgba(${hexToRgb(baseColor)}, ${settings.opacity}), rgba(${hexToRgb(darkColor)}, ${settings.opacity}))`;
+            } else if (settings.gradient === 'radial') {
+                const darkColor = darkenColor(baseColor, settings.gradientDarkness);
+                backgroundStyle = `radial-gradient(circle, rgba(${hexToRgb(baseColor)}, ${settings.opacity}), rgba(${hexToRgb(darkColor)}, ${settings.opacity}))`;
             }
             
-            // Apply border radius and text color
+            // Get the fullscreen background element
+            const fullscreenBackground = document.getElementById('fullscreen-background');
+            
+            // Apply settings based on mode
+            if (settings.mode === 'lower-third') {
+                // Position the lower third
+                questionContainer.style.top = `${settings.positionY}%`;
+                questionContainer.style.left = `${settings.positionX}%`;
+                
+                // Apply background to question box only
+                questionBox.style.background = backgroundStyle;
+                questionBox.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                
+                // Hide fullscreen background
+                fullscreenBackground.style.display = 'none';
+                document.body.style.background = 'transparent';
+            } else {
+                // Full screen mode
+                // Reset position
+                questionContainer.style.top = '0';
+                questionContainer.style.left = '0';
+                
+                // Show and style fullscreen background
+                fullscreenBackground.style.display = 'block';
+                fullscreenBackground.style.background = backgroundStyle;
+                
+                // Ensure question box is transparent
+                questionBox.style.background = 'transparent';
+                questionBox.style.boxShadow = 'none';
+                document.body.style.background = 'transparent';
+            }
+            
+            // Apply common settings
             questionBox.style.borderRadius = `${settings.cornerRadius}px`;
             questionBox.style.color = settings.textColor;
             
@@ -508,6 +582,14 @@
             
             // Save settings to localStorage
             localStorage.setItem('questionViewSettings', JSON.stringify(settings));
+            
+            // Debug output
+            console.log(`Mode: ${settings.mode}`);
+            console.log(`Background: ${backgroundStyle}`);
+            if (settings.mode === 'full-screen') {
+                console.log(`Body background: ${document.body.style.background}`);
+                console.log(`Question box background: ${questionBox.style.background}`);
+            }
         }
 
         // Helper function to convert hex to rgb
@@ -548,6 +630,10 @@
             if (savedSettings) {
                 settings = JSON.parse(savedSettings);
                 
+                // Ensure position settings exist (for backward compatibility)
+                if (settings.positionX === undefined) settings.positionX = 15;
+                if (settings.positionY === undefined) settings.positionY = 15;
+                
                 // Update UI to match saved settings
                 modeOptions.forEach(option => {
                     option.classList.toggle('active', option.dataset.mode === settings.mode);
@@ -573,6 +659,12 @@
                 
                 darknessSlider.value = settings.gradientDarkness;
                 darknessValue.textContent = settings.gradientDarkness;
+                
+                positionXSlider.value = settings.positionX;
+                positionXValue.textContent = settings.positionX;
+                
+                positionYSlider.value = settings.positionY;
+                positionYValue.textContent = settings.positionY;
                 
                 applySettings();
             }
@@ -683,11 +775,20 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            // Force a clean slate
+            document.body.style.background = 'transparent';
+            
             loadSettings();
             pollCurrentQuestion();
             
             // Poll for updates every 2 seconds
             setInterval(pollCurrentQuestion, 2000);
+            
+            // Force apply settings after a short delay to ensure background is applied
+            setTimeout(() => {
+                applySettings();
+                console.log("Applied settings after timeout");
+            }, 500);
         });
     </script>
 </body>
