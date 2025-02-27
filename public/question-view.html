@@ -628,42 +628,6 @@
                 return;
             }
             
-            // Check if current session matches the one in localStorage
-            const currentSessionJSON = localStorage.getItem('currentSession');
-            let currentSession = null;
-            
-            try {
-                // Try to parse as JSON first (new format)
-                currentSession = JSON.parse(currentSessionJSON);
-                
-                // If it's an object with a name property, use that
-                if (currentSession && typeof currentSession === 'object' && currentSession.name) {
-                    if (currentSession.name !== sessionName) {
-                        console.log('Session mismatch:', currentSession.name, 'vs', sessionName);
-                        // If session doesn't match, just show blank
-                        document.body.style.background = 'transparent';
-                        questionContainer.style.display = 'none';
-                        return;
-                    }
-                }
-            } catch (e) {
-                // If it's not JSON, it might be the old format (just the name)
-                if (currentSessionJSON && currentSessionJSON !== sessionName) {
-                    console.log('Session mismatch (old format):', currentSessionJSON, 'vs', sessionName);
-                    // If session doesn't match, just show blank
-                    document.body.style.background = 'transparent';
-                    questionContainer.style.display = 'none';
-                    return;
-                }
-            }
-            
-            // Store the current session in the new format
-            localStorage.setItem('currentSession', JSON.stringify({
-                name: sessionName,
-                // We don't have the password here, but that's okay for this check
-                lastAccessed: new Date().toISOString()
-            }));
-            
             // Update page title and session info
             document.title = `Question View - ${sessionName}`;
             sessionInfo.textContent = `Session: ${sessionName}`;

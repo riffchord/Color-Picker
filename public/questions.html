@@ -957,40 +957,6 @@
                 return;
             }
             
-            // Check if current session matches the one in localStorage
-            const currentSessionJSON = localStorage.getItem('currentSession');
-            let currentSession = null;
-            
-            try {
-                // Try to parse as JSON first (new format)
-                currentSession = JSON.parse(currentSessionJSON);
-                
-                // If it's an object with a name property, use that
-                if (currentSession && typeof currentSession === 'object' && currentSession.name) {
-                    if (currentSession.name !== sessionName) {
-                        console.log('Session mismatch:', currentSession.name, 'vs', sessionName);
-                        // Redirect to question-index.html if session doesn't match
-                        window.location.href = 'question-index.html';
-                        return;
-                    }
-                }
-            } catch (e) {
-                // If it's not JSON, it might be the old format (just the name)
-                if (currentSessionJSON && currentSessionJSON !== sessionName) {
-                    console.log('Session mismatch (old format):', currentSessionJSON, 'vs', sessionName);
-                    // Redirect to question-index.html if session doesn't match
-                    window.location.href = 'question-index.html';
-                    return;
-                }
-            }
-            
-            // Store the current session in the new format
-            localStorage.setItem('currentSession', JSON.stringify({
-                name: sessionName,
-                // We don't have the password here, but that's okay for this check
-                lastAccessed: new Date().toISOString()
-            }));
-            
             // Update page title with session name
             document.title = `Questions - ${sessionName}`;
             

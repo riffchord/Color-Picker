@@ -312,6 +312,84 @@
             });
         }
 
+        // Join session function
+        function joinSession(sessionName, sessionPassword, type) {
+            const errorElement = document.getElementById('join-error');
+            
+            // Basic validation
+            if (!sessionName || !sessionPassword) {
+                errorElement.textContent = 'Please enter both session name and password.';
+                errorElement.classList.remove('hidden');
+                return;
+            }
+            
+            // Verify session with the server instead of checking localStorage
+            fetch('./api/sessions/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: sessionName,
+                    password: sessionPassword
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || `Server returned ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(session => {
+                // Session verified successfully
+                
+                // Update recent sessions in localStorage (just for UI convenience)
+                const recentSessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
+                const existingIndex = recentSessions.findIndex(s => s.name === sessionName);
+                
+                if (existingIndex !== -1) {
+                    // Move to the top of the list
+                    const session = recentSessions.splice(existingIndex, 1)[0];
+                    session.lastAccessed = new Date().toISOString();
+                    recentSessions.unshift(session);
+                } else {
+                    // Add to the top of the list
+                    recentSessions.unshift({
+                        name: sessionName,
+                        password: sessionPassword,
+                        lastAccessed: new Date().toISOString()
+                    });
+                    
+                    // Keep only the 5 most recent sessions
+                    if (recentSessions.length > 5) {
+                        recentSessions.pop();
+                    }
+                }
+                
+                localStorage.setItem('recentSessions', JSON.stringify(recentSessions));
+                
+                // Store current session
+                localStorage.setItem('currentSession', JSON.stringify({
+                    name: sessionName,
+                    password: sessionPassword
+                }));
+                
+                // Redirect to appropriate page
+                if (type === 'manage') {
+                    window.location.href = `questions.html?session=${encodeURIComponent(sessionName)}`;
+                } else {
+                    window.location.href = `question-view.html?session=${encodeURIComponent(sessionName)}`;
+                }
+            })
+            .catch(error => {
+                console.error('Error verifying session:', error);
+                errorElement.textContent = error.message || 'Session not found or incorrect password.';
+                errorElement.classList.remove('hidden');
+            });
+        }
+
         // Create a new session
         document.getElementById('create-session-form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -329,52 +407,65 @@
                 return;
             }
             
-            // Check if session already exists
-            const existingSessions = JSON.parse(localStorage.getItem('sessions') || '{}');
-            if (existingSessions[sessionName]) {
-                errorElement.textContent = 'A session with this name already exists. Please choose another name.';
+            // Create the session on the server
+            fetch('./api/sessions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: sessionName,
+                    password: sessionPassword
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || `Server returned ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(session => {
+                // Session created successfully
+                
+                // Add to recent sessions (just for UI convenience)
+                const recentSessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
+                recentSessions.unshift({
+                    name: sessionName,
+                    password: sessionPassword,
+                    lastAccessed: new Date().toISOString()
+                });
+                
+                // Keep only the 5 most recent sessions
+                if (recentSessions.length > 5) {
+                    recentSessions.pop();
+                }
+                
+                localStorage.setItem('recentSessions', JSON.stringify(recentSessions));
+                
+                // Show success message
+                errorElement.classList.add('hidden');
+                successElement.textContent = 'Session created successfully!';
+                successElement.classList.remove('hidden');
+                
+                // Reset form
+                document.getElementById('create-session-form').reset();
+                
+                // Reload recent sessions
+                loadRecentSessions();
+                
+                // Redirect to questions page after a short delay
+                setTimeout(() => {
+                    joinSession(sessionName, sessionPassword, 'manage');
+                }, 1000);
+            })
+            .catch(error => {
+                console.error('Error creating session:', error);
+                errorElement.textContent = error.message || 'Error creating session. Please try again.';
                 errorElement.classList.remove('hidden');
                 successElement.classList.add('hidden');
-                return;
-            }
-            
-            // Create the session
-            existingSessions[sessionName] = {
-                password: sessionPassword,
-                created: new Date().toISOString()
-            };
-            localStorage.setItem('sessions', JSON.stringify(existingSessions));
-            
-            // Add to recent sessions
-            const recentSessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
-            recentSessions.unshift({
-                name: sessionName,
-                password: sessionPassword,
-                lastAccessed: new Date().toISOString()
             });
-            
-            // Keep only the 5 most recent sessions
-            if (recentSessions.length > 5) {
-                recentSessions.pop();
-            }
-            
-            localStorage.setItem('recentSessions', JSON.stringify(recentSessions));
-            
-            // Show success message
-            errorElement.classList.add('hidden');
-            successElement.textContent = 'Session created successfully!';
-            successElement.classList.remove('hidden');
-            
-            // Reset form
-            document.getElementById('create-session-form').reset();
-            
-            // Reload recent sessions
-            loadRecentSessions();
-            
-            // Redirect to questions page after a short delay
-            setTimeout(() => {
-                joinSession(sessionName, sessionPassword, 'manage');
-            }, 1000);
         });
 
         // Join session buttons
@@ -389,71 +480,6 @@
             const sessionPassword = document.getElementById('join-session-password').value.trim();
             joinSession(sessionName, sessionPassword, 'view');
         });
-
-        // Join session function
-        function joinSession(sessionName, sessionPassword, type) {
-            const errorElement = document.getElementById('join-error');
-            
-            // Basic validation
-            if (!sessionName || !sessionPassword) {
-                errorElement.textContent = 'Please enter both session name and password.';
-                errorElement.classList.remove('hidden');
-                return;
-            }
-            
-            // Check if session exists
-            const existingSessions = JSON.parse(localStorage.getItem('sessions') || '{}');
-            if (!existingSessions[sessionName]) {
-                errorElement.textContent = 'Session not found. Please check the name and try again.';
-                errorElement.classList.remove('hidden');
-                return;
-            }
-            
-            // Check password
-            if (existingSessions[sessionName].password !== sessionPassword) {
-                errorElement.textContent = 'Incorrect password. Please try again.';
-                errorElement.classList.remove('hidden');
-                return;
-            }
-            
-            // Update recent sessions
-            const recentSessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
-            const existingIndex = recentSessions.findIndex(s => s.name === sessionName);
-            
-            if (existingIndex !== -1) {
-                // Move to the top of the list
-                const session = recentSessions.splice(existingIndex, 1)[0];
-                session.lastAccessed = new Date().toISOString();
-                recentSessions.unshift(session);
-            } else {
-                // Add to the top of the list
-                recentSessions.unshift({
-                    name: sessionName,
-                    password: sessionPassword,
-                    lastAccessed: new Date().toISOString()
-                });
-                
-                // Keep only the 5 most recent sessions
-                if (recentSessions.length > 5) {
-                    recentSessions.pop();
-                }
-            }
-            
-            localStorage.setItem('recentSessions', JSON.stringify(recentSessions));
-            
-            // Store current session
-            localStorage.setItem('currentSession', JSON.stringify({
-                name: sessionName,
-                password: sessionPassword
-            }));
-            
-            // Redirect to appropriate page
-            if (type === 'manage') {
-                window.location.href = `questions.html?session=${encodeURIComponent(sessionName)}`;
-            } else {
-                window.location.href = `question-view.html?session=${encodeURIComponent(sessionName)}`;
-            }
-        }
 
         // Load recent sessions on page load
         loadRecentSessions();
