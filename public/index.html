@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Tools Dashboard</title>
+    <style>
+        :root {
+            --primary-color: #1C9CD9;
+            --secondary-color: #f8f9fa;
+            --accent-color: #e74c3c;
+            --border-color: #dee2e6;
+            --text-color: #343a40;
+            --light-text: #6c757d;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --hover-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            --card-radius: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            margin: 0;
+            padding: 30px;
+            background: #f5f5f5;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-weight: 600;
+            color: var(--text-color);
+            letter-spacing: -0.5px;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .tool-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .tool-card:hover {
+            box-shadow: var(--hover-shadow);
+            transform: translateY(-5px);
+        }
+
+        .tool-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .tool-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .tool-description {
+            color: var(--light-text);
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+
+        .tool-link {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: var(--card-radius);
+            font-weight: 600;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .tool-link:hover {
+            background-color: #1689c3;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            color: var(--light-text);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tools Dashboard</h1>
+        
+        <div class="tools-grid">
+            <div class="tool-card">
+                <div class="tool-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <h2 class="tool-title">Question Manager</h2>
+                <p class="tool-description">
+                    Create and manage live questions for presentations, broadcasts, or events. 
+                    Organize questions into different sessions and display them in real-time.
+                </p>
+                <a href="question-index.html" class="tool-link">Open Tool</a>
+            </div>
+            
+            <div class="tool-card">
+                <div class="tool-icon">
+                    <i class="fas fa-palette"></i>
+                </div>
+                <h2 class="tool-title">Color Picker</h2>
+                <p class="tool-description">
+                    Select and manage color palettes for your projects. 
+                    Create, save, and export color schemes for various applications.
+                </p>
+                <a href="color-picker.html" class="tool-link">Open Tool</a>
+            </div>
+            
+            <div class="tool-card">
+                <div class="tool-icon">
+                    <i class="fas fa-fill-drip"></i>
+                </div>
+                <h2 class="tool-title">Color Background</h2>
+                <p class="tool-description">
+                    Generate solid color backgrounds or gradients for your productions.
+                    Customize colors, opacity, and transition effects.
+                </p>
+                <a href="color-background.html" class="tool-link">Open Tool</a>
+            </div>
+            
+            <div class="tool-card">
+                <div class="tool-icon">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <h2 class="tool-title">Name Tag Generator</h2>
+                <p class="tool-description">
+                    Create professional name tags and lower thirds for your videos and presentations.
+                    Customize text, colors, and display styles.
+                </p>
+                <a href="nametag.html" class="tool-link">Open Tool</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2023 Tools Dashboard. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html> 

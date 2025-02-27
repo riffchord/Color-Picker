@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Live Chat Questions</title>
+    <style>
+        :root {
+            --primary-color: #1C9CD9;
+            --secondary-color: #f8f9fa;
+            --accent-color: #e74c3c;
+            --on-air-color: #e74c3c;
+            --border-color: #dee2e6;
+            --text-color: #343a40;
+            --light-text: #6c757d;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --hover-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            --card-radius: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            margin: 0;
+            padding: 30px;
+            background: #f5f5f5;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+            color: var(--text-color);
+            letter-spacing: -0.5px;
+        }
+
+        .kanban {
+            display: flex;
+            gap: 25px;
+            margin-top: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .column {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border-top: 5px solid transparent;
+        }
+
+        .column:hover {
+            box-shadow: var(--hover-shadow);
+        }
+
+        /* Column-specific styling */
+        #new {
+            border-top-color: #3498db;
+        }
+
+        #selected {
+            border-top-color: #2ecc71;
+        }
+
+        #on_air {
+            border-top-color: var(--on-air-color);
+            background: linear-gradient(to bottom, rgba(231, 76, 60, 0.05), white);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #on_air::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--on-air-color), #e74c3c, #c0392b);
+            animation: pulse 2s infinite;
+            z-index: 1;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        #done {
+            border-top-color: #95a5a6;
+        }
+
+        .column-header {
+            margin: 0 0 20px 0;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+            user-select: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            font-size: 1.2rem;
+        }
+
+        #on_air .column-header {
+            color: var(--on-air-color);
+            display: flex;
+            align-items: center;
+        }
+
+        #on_air .column-header::before {
+            content: '•';
+            color: var(--on-air-color);
+            font-size: 2rem;
+            margin-right: 10px;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0% { opacity: 0.2; }
+            50% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+
+        .column-content {
+            flex: 1;
+            min-height: 200px;
+            overflow-y: auto;
+            padding-right: 5px;
+            overflow-x: visible;
+            padding-top: 5px;
+        }
+
+        .column-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .column-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .column-content::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+        }
+
+        .column-content::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
+        }
+
+        .question-card {
+            background: var(--secondary-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--card-radius);
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: move;
+            transition: var(--transition);
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-top: 10px;
+        }
+
+        .question-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        #on_air .question-card {
+            background: white;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.15);
+            overflow: visible;
+        }
+
+        #on_air .question-card::before {
+            content: 'LIVE';
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            background: var(--on-air-color);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 10px;
+            letter-spacing: 1px;
+            z-index: 5;
+            box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+        }
+
+        .question-content {
+            display: block;
+            font-size: 1rem;
+            line-height: 1.5;
+            word-break: break-word;
+            padding-right: 30px;
+        }
+
+        .question-card .edit-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: var(--light-text);
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .question-card .delete-icon {
+            position: absolute;
+            top: 10px;
+            right: 35px;
+            color: var(--accent-color);
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .question-card:hover .edit-icon,
+        .question-card:hover .delete-icon {
+            opacity: 1;
+        }
+
+        .question-card .edit-icon:hover {
+            color: var(--primary-color);
+        }
+
+        .question-card .delete-icon:hover {
+            color: #c0392b;
+        }
+
+        .new-question {
+            border: 2px dashed #dee2e6;
+            border-radius: var(--card-radius);
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            text-align: center;
+            color: var(--light-text);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 400;
+        }
+
+        .new-question:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background: rgba(28, 156, 217, 0.05);
+        }
+
+        .new-question i {
+            margin-right: 8px;
+        }
+
+        .view-style {
+            margin-left: 10px;
+            padding: 5px;
+        }
+
+        .question-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--card-radius);
+            font-family: 'Source Sans Pro', sans-serif;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            cursor: text !important;
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
+            position: relative;
+            z-index: 100;
+            resize: vertical;
+            min-height: 80px;
+            font-size: 0.95rem;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .question-input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(28, 156, 217, 0.2);
+        }
+
+        .input-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .input-actions button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Source Sans Pro', sans-serif;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .save-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .save-btn:hover {
+            background-color: #1689c3;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .cancel-btn {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: var(--light-text);
+        }
+
+        .cancel-btn:hover {
+            background-color: #e9ecef;
+        }
+
+        /* Add a specific style for editing state */
+        .question-card.editing {
+            cursor: default !important;
+            pointer-events: auto !important;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 0 0 3px rgba(28, 156, 217, 0.2);
+        }
+
+        .question-input-container {
+            pointer-events: auto !important;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* On-air animation */
+        @keyframes onAirPulse {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+
+        .on-air-animation {
+            animation: onAirPulse 1s ease-out;
+        }
+
+        @media (max-width: 768px) {
+            .kanban {
+                flex-direction: column;
+            }
+            
+            .column {
+                margin-bottom: 20px;
+            }
+        }
+
+        .updating-indicator,
+        .deleting-indicator,
+        .saving-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: var(--light-text);
+            border-radius: var(--card-radius);
+            z-index: 10;
+        }
+
+        .question-card.updating,
+        .question-card.deleting {
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Live Question Management</h1>
+    <div class="kanban">
+        <div class="column" id="new">
+            <h2 class="column-header">New Questions</h2>
+            <div class="column-content">
+                <div class="new-question" onclick="showNewQuestionInput(this)">
+                    <i class="fas fa-plus-circle"></i> Add new question
+                </div>
+                <!-- Questions will be added here -->
+            </div>
+        </div>
+        <div class="column" id="selected">
+            <h2 class="column-header">Selected</h2>
+            <div class="column-content">
+                <!-- Questions will be added here -->
+            </div>
+        </div>
+        <div class="column" id="on_air">
+            <h2 class="column-header">On Air</h2>
+            <div class="column-content">
+                <!-- Only one question allowed here -->
+            </div>
+        </div>
+        <div class="column" id="done">
+            <h2 class="column-header">Done</h2>
+            <div class="column-content">
+                <!-- Questions will be added here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <script>
+        let currentViewStyle = 'view1';
+        
+        // Store sortable instances for later reference
+        const sortableInstances = {};
+        
+        // Initialize Sortable for each column content (not the entire column)
+        document.querySelectorAll('.column-content').forEach(columnContent => {
+            const sortable = new Sortable(columnContent, {
+                group: 'questions',
+                animation: 150,
+                handle: '.question-card', // Only question cards are draggable
+                filter: '.new-question, .question-input-container, .editing', // Filter out new question button and input containers
+                onAdd: function(evt) {
+                    const questionId = evt.item.dataset.id;
+                    const newStatus = evt.to.closest('.column').id;
+                    
+                    // If moving to on_air, check if there's already a question there
+                    if (newStatus === 'on_air') {
+                        const onAirColumn = document.querySelector('#on_air .column-content');
+                        const questions = onAirColumn.getElementsByClassName('question-card');
+                        if (questions.length > 1) {
+                            // Move the question back to its original position
+                            evt.from.appendChild(evt.item);
+                            return;
+                        }
+                    }
+                    
+                    updateQuestionStatus(questionId, newStatus);
+                    
+                    // Add special animation for on_air
+                    if (newStatus === 'on_air') {
+                        evt.item.classList.add('on-air-animation');
+                        setTimeout(() => {
+                            evt.item.classList.remove('on-air-animation');
+                        }, 1000);
+                    }
+                }
+            });
+            
+            // Store the sortable instance for this column
+            sortableInstances[columnContent.closest('.column').id] = sortable;
+        });
+
+        // Function to show inline question input
+        function showNewQuestionInput(element) {
+            // Create a standalone container that's not part of the sortable list
+            const inputContainer = document.createElement('div');
+            inputContainer.className = 'question-input-container';
+            inputContainer.innerHTML = `
+                <textarea class="question-input" placeholder="Type your question here..." rows="3"></textarea>
+                <div class="input-actions">
+                    <button class="cancel-btn" onclick="cancelNewQuestion(this)">Cancel</button>
+                    <button class="save-btn" onclick="saveNewQuestion(this)">Save</button>
+                </div>
+            `;
+            
+            // Insert the input container before the "add new question" element
+            element.parentNode.insertBefore(inputContainer, element);
+            // Hide the "add new question" element
+            element.style.display = 'none';
+            
+            // Get the textarea and set up event handling
+            const textarea = inputContainer.querySelector('.question-input');
+            
+            // Disable Sortable temporarily
+            const columnId = element.closest('.column').id;
+            if (sortableInstances[columnId]) {
+                sortableInstances[columnId].option('disabled', true);
+            }
+            
+            // Focus the textarea after a short delay to ensure it's ready
+            setTimeout(() => {
+                textarea.focus();
+                
+                // Place cursor at the end of the text
+                const textLength = textarea.value.length;
+                textarea.setSelectionRange(textLength, textLength);
+            }, 50);
+        }
+
+        // Function to cancel new question input
+        function cancelNewQuestion(button) {
+            const inputContainer = button.closest('.question-input-container');
+            const columnElement = inputContainer.closest('.column');
+            const newQuestionElement = inputContainer.nextElementSibling || columnElement.querySelector('.new-question');
+            
+            // Show the "add new question" element
+            newQuestionElement.style.display = 'flex';
+            
+            // Remove the input container
+            inputContainer.remove();
+            
+            // Re-enable Sortable
+            const columnId = columnElement.id;
+            if (sortableInstances[columnId]) {
+                sortableInstances[columnId].option('disabled', false);
+            }
+        }
+
+        // Function to save new question
+        function saveNewQuestion(button) {
+            // Get the input container and textarea from the button
+            const inputContainer = button.closest('.question-input-container');
+            const questionInput = inputContainer.querySelector('.question-input');
+            const content = questionInput.value.trim();
+            
+            if (!content) {
+                alert('Please enter a question');
+                return;
+            }
+            
+            // Get session from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionName = urlParams.get('session');
+            
+            if (!sessionName) {
+                alert('No session specified. Please go back to the session page and try again.');
+                window.location.href = 'question-index.html';
+                return;
+            }
+            
+            // Disable the input and button while saving
+            questionInput.disabled = true;
+            button.disabled = true;
+            
+            // Show saving indicator
+            const savingIndicator = document.createElement('div');
+            savingIndicator.className = 'saving-indicator';
+            savingIndicator.textContent = 'Saving...';
+            inputContainer.appendChild(savingIndicator);
+            
+            fetch(`./api/questions?session=${encodeURIComponent(sessionName)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ content })
+            })
+            .then(response => {
+                // Remove saving indicator
+                if (savingIndicator.parentNode) {
+                    savingIndicator.remove();
+                }
+                
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || `Server returned ${response.status}: ${response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(question => {
+                console.log('Saved new question:', question);
+                
+                // Add the new question to the column
+                addQuestionToColumn('new', question);
+                
+                // Remove the input container and show the "add new question" button
+                const columnElement = inputContainer.closest('.column');
+                const newQuestionElement = columnElement.querySelector('.new-question');
+                newQuestionElement.style.display = 'flex';
+                inputContainer.remove();
+                
+                // Re-enable Sortable
+                const columnId = columnElement.id;
+                if (sortableInstances[columnId]) {
+                    sortableInstances[columnId].option('disabled', false);
+                }
+            })
+            .catch(error => {
+                console.error('Error saving question:', error);
+                
+                // Re-enable the input and button
+                questionInput.disabled = false;
+                button.disabled = false;
+                
+                // Show error message
+                alert(`Failed to save question: ${error.message}`);
+            });
+        }
+
+        // Function to show edit question input
+        function showEditQuestionInput(element) {
+            const questionCard = element.closest('.question-card');
+            const questionId = questionCard.dataset.id;
+            const currentContent = questionCard.querySelector('.question-content').textContent;
+            const columnElement = questionCard.closest('.column');
+            
+            // Mark the card as being edited
+            questionCard.classList.add('editing');
+            
+            // Disable Sortable temporarily
+            const columnId = columnElement.id;
+            if (sortableInstances[columnId]) {
+                sortableInstances[columnId].option('disabled', true);
+            }
+            
+            // Create edit container
+            const editContainer = document.createElement('div');
+            editContainer.className = 'question-input-container';
+            editContainer.innerHTML = `
+                <textarea class="question-input" placeholder="Edit your question..." rows="3">${currentContent}</textarea>
+                <div class="input-actions">
+                    <button class="cancel-btn" onclick="cancelEditQuestion(this, '${currentContent}')">Cancel</button>
+                    <button class="save-btn" onclick="saveEditQuestion(this, '${questionId}')">Save</button>
+                </div>
+            `;
+            
+            // Replace question content with edit container
+            questionCard.innerHTML = '';
+            questionCard.appendChild(editContainer);
+            questionCard.style.cursor = 'default';
+            
+            // Get the textarea and focus it after a short delay
+            const textarea = editContainer.querySelector('.question-input');
+            setTimeout(() => {
+                textarea.focus();
+                
+                // Place cursor at the end of the text
+                const textLength = textarea.value.length;
+                textarea.setSelectionRange(textLength, textLength);
+            }, 50);
+        }
+
+        // Function to cancel edit question
+        function cancelEditQuestion(button, originalContent) {
+            const questionCard = button.closest('.question-card');
+            const questionId = questionCard.dataset.id;
+            const columnElement = questionCard.closest('.column');
+            
+            // Restore original content
+            restoreQuestionCard(questionCard, questionId, originalContent);
+            
+            // Re-enable Sortable
+            const columnId = columnElement.id;
+            if (sortableInstances[columnId]) {
+                sortableInstances[columnId].option('disabled', false);
+            }
+        }
+
+        // Function to save edited question
+        function saveEditQuestion(button, questionId) {
+            const questionCard = button.closest('.question-card');
+            const textarea = questionCard.querySelector('.question-input');
+            const content = textarea.value.trim();
+            const columnElement = questionCard.closest('.column');
+            
+            if (!content) {
+                alert('Please enter a question');
+                return;
+            }
+
+            // Get the session from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionName = urlParams.get('session');
+
+            // Update the question on the server
+            fetch(`./api/questions/${questionId}?session=${encodeURIComponent(sessionName)}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ content })
+            })
+            .then(response => response.json())
+            .then(question => {
+                // Restore question card with updated content
+                restoreQuestionCard(questionCard, questionId, content);
+                
+                // Re-enable Sortable
+                const columnId = columnElement.id;
+                if (sortableInstances[columnId]) {
+                    sortableInstances[columnId].option('disabled', false);
+                }
+            })
+            .catch(error => {
+                console.error('Error updating question:', error);
+                // Restore question card with original content
+                restoreQuestionCard(questionCard, questionId, content);
+                
+                // Re-enable Sortable
+                const columnId = columnElement.id;
+                if (sortableInstances[columnId]) {
+                    sortableInstances[columnId].option('disabled', false);
+                }
+            });
+        }
+
+        // Function to restore question card after editing
+        function restoreQuestionCard(questionCard, questionId, content) {
+            questionCard.innerHTML = `
+                <span class="question-content">${content}</span>
+                <i class="fas fa-trash delete-icon" onclick="confirmDeleteQuestion(this, '${questionId}')"></i>
+                <i class="fas fa-edit edit-icon" onclick="showEditQuestionInput(this)"></i>
+            `;
+            questionCard.style.cursor = 'move';
+            questionCard.classList.remove('editing');
+        }
+
+        // Function to confirm question deletion
+        function confirmDeleteQuestion(element, questionId) {
+            if (confirm('Are you sure you want to delete this question?')) {
+                deleteQuestion(questionId);
+            }
+        }
+
+        // Function to delete a question
+        function deleteQuestion(questionId) {
+            if (!confirm('Are you sure you want to delete this question?')) {
+                return;
+            }
+            
+            // Get session from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionName = urlParams.get('session');
+            
+            if (!sessionName) {
+                alert('No session specified. Please go back to the session page and try again.');
+                window.location.href = 'question-index.html';
+                return;
+            }
+            
+            // Find the question element
+            const questionElement = document.querySelector(`.question-card[data-id="${questionId}"]`);
+            if (!questionElement) {
+                console.error(`Question element with ID ${questionId} not found`);
+                return;
+            }
+            
+            // Show deleting indicator
+            questionElement.classList.add('deleting');
+            const deletingIndicator = document.createElement('div');
+            deletingIndicator.className = 'deleting-indicator';
+            deletingIndicator.textContent = 'Deleting...';
+            questionElement.appendChild(deletingIndicator);
+            
+            // Disable the delete icon
+            const deleteIcon = questionElement.querySelector('.delete-icon');
+            if (deleteIcon) {
+                deleteIcon.style.pointerEvents = 'none';
+                deleteIcon.style.opacity = '0.5';
+            }
+            
+            fetch(`./api/questions/${questionId}?session=${encodeURIComponent(sessionName)}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || `Server returned ${response.status}: ${response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log('Deleted question:', result);
+                
+                // Remove the question element with animation
+                questionElement.style.opacity = '0';
+                questionElement.style.height = '0';
+                setTimeout(() => {
+                    questionElement.remove();
+                }, 300);
+            })
+            .catch(error => {
+                console.error('Error deleting question:', error);
+                
+                // Restore original state
+                questionElement.classList.remove('deleting');
+                if (deletingIndicator.parentNode) {
+                    deletingIndicator.remove();
+                }
+                
+                // Re-enable the delete icon
+                if (deleteIcon) {
+                    deleteIcon.style.pointerEvents = '';
+                    deleteIcon.style.opacity = '';
+                }
+                
+                // Show error message
+                alert(`Failed to delete question: ${error.message}`);
+            });
+        }
+
+        // Function to add a question card to a column
+        function addQuestionToColumn(columnId, question) {
+            // Add console logging to debug the question object
+            console.log('Adding question to column:', columnId, question);
+            
+            if (!question || !question.id) {
+                console.error('Invalid question object:', question);
+                return;
+            }
+            
+            const columnContent = document.querySelector(`#${columnId} .column-content`);
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            card.dataset.id = question.id;
+            
+            // Ensure content is not undefined
+            const content = question.content || 'No content';
+            
+            card.innerHTML = `
+                <span class="question-content">${content}</span>
+                <i class="fas fa-trash delete-icon" onclick="confirmDeleteQuestion(this, '${question.id}')"></i>
+                <i class="fas fa-edit edit-icon" onclick="showEditQuestionInput(this)"></i>
+            `;
+            
+            if (columnId === 'new') {
+                const newQuestion = columnContent.querySelector('.new-question');
+                columnContent.insertBefore(card, newQuestion.nextSibling);
+            } else {
+                columnContent.appendChild(card);
+            }
+        }
+
+        // Function to update question status
+        function updateQuestionStatus(questionId, status) {
+            // Get session from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionName = urlParams.get('session');
+            
+            if (!sessionName) {
+                alert('No session specified. Please go back to the session page and try again.');
+                window.location.href = 'question-index.html';
+                return;
+            }
+            
+            // Find the question element
+            const questionElement = document.querySelector(`.question-card[data-id="${questionId}"]`);
+            if (!questionElement) {
+                console.error(`Question element with ID ${questionId} not found`);
+                return;
+            }
+            
+            // Map column IDs to status values in the database
+            // The database uses: 'new', 'selected', 'on_air', 'done'
+            let dbStatus = status;
+            if (status === 'on_air') {
+                dbStatus = 'on_air';
+            } else if (status === 'selected') {
+                dbStatus = 'selected';
+            } else if (status === 'done') {
+                dbStatus = 'done';
+            } else {
+                dbStatus = 'new';
+            }
+            
+            console.log(`Updating question ${questionId} status to ${dbStatus} (from column ${status})`);
+            
+            // Show updating indicator
+            questionElement.classList.add('updating');
+            const updatingIndicator = document.createElement('div');
+            updatingIndicator.className = 'updating-indicator';
+            updatingIndicator.textContent = 'Updating...';
+            questionElement.appendChild(updatingIndicator);
+            
+            fetch(`./api/questions/${questionId}/status?session=${encodeURIComponent(sessionName)}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: dbStatus })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || `Server returned ${response.status}: ${response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(updatedQuestion => {
+                console.log('Updated question status:', updatedQuestion);
+                
+                // Remove updating indicator
+                questionElement.classList.remove('updating');
+                if (updatingIndicator.parentNode) {
+                    updatingIndicator.remove();
+                }
+                
+                // If this question is now on_air, update any other on_air questions
+                if (status === 'on_air') {
+                    const otherOnAirQuestions = document.querySelectorAll(`.question-card:not([data-id="${questionId}"])`);
+                    otherOnAirQuestions.forEach(element => {
+                        if (element.closest('.column').id === 'on_air') {
+                            // Move this element to the "new" column
+                            document.querySelector('#new .column-content').appendChild(element);
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error updating question status:', error);
+                
+                // Remove updating indicator and restore original content
+                questionElement.classList.remove('updating');
+                if (updatingIndicator.parentNode) {
+                    updatingIndicator.remove();
+                }
+                
+                // Show error message
+                alert(`Failed to update question status: ${error.message}`);
+            });
+        }
+
+        // Function to update view style
+        function updateViewStyle(style) {
+            currentViewStyle = style;
+            const onAirQuestion = document.querySelector('#on_air .question-card');
+            if (onAirQuestion) {
+                updateQuestionStatus(onAirQuestion.dataset.id, 'on_air');
+            }
+        }
+
+        // Load initial questions
+        function loadQuestions() {
+            // Get session from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionName = urlParams.get('session');
+            
+            if (!sessionName) {
+                // Redirect to question-index.html if no session specified
+                window.location.href = 'question-index.html';
+                return;
+            }
+            
+            // Check if current session matches the one in localStorage
+            const currentSessionJSON = localStorage.getItem('currentSession');
+            let currentSession = null;
+            
+            try {
+                // Try to parse as JSON first (new format)
+                currentSession = JSON.parse(currentSessionJSON);
+                
+                // If it's an object with a name property, use that
+                if (currentSession && typeof currentSession === 'object' && currentSession.name) {
+                    if (currentSession.name !== sessionName) {
+                        console.log('Session mismatch:', currentSession.name, 'vs', sessionName);
+                        // Redirect to question-index.html if session doesn't match
+                        window.location.href = 'question-index.html';
+                        return;
+                    }
+                }
+            } catch (e) {
+                // If it's not JSON, it might be the old format (just the name)
+                if (currentSessionJSON && currentSessionJSON !== sessionName) {
+                    console.log('Session mismatch (old format):', currentSessionJSON, 'vs', sessionName);
+                    // Redirect to question-index.html if session doesn't match
+                    window.location.href = 'question-index.html';
+                    return;
+                }
+            }
+            
+            // Store the current session in the new format
+            localStorage.setItem('currentSession', JSON.stringify({
+                name: sessionName,
+                // We don't have the password here, but that's okay for this check
+                lastAccessed: new Date().toISOString()
+            }));
+            
+            // Update page title with session name
+            document.title = `Questions - ${sessionName}`;
+            
+            // Fetch questions for this session
+            fetch(`./api/questions?session=${encodeURIComponent(sessionName)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.error || `Server returned ${response.status}: ${response.statusText}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Loaded questions data:', data);
+                    
+                    // Ensure data is an array
+                    const questions = Array.isArray(data) ? data : [];
+                    
+                    // Clear all columns
+                    document.querySelectorAll('.column-content').forEach(column => {
+                        // Keep the "Add new question" button in the "new" column
+                        if (column.closest('.column').id === 'new') {
+                            const newQuestionButton = column.querySelector('.new-question');
+                            column.innerHTML = '';
+                            if (newQuestionButton) {
+                                column.appendChild(newQuestionButton);
+                            } else {
+                                // Recreate the button if it doesn't exist
+                                const newButton = document.createElement('div');
+                                newButton.className = 'new-question';
+                                newButton.innerHTML = '<i class="fas fa-plus-circle"></i> Add new question';
+                                newButton.onclick = function() { showNewQuestionInput(this); };
+                                column.appendChild(newButton);
+                            }
+                        } else {
+                            column.innerHTML = '';
+                        }
+                    });
+                    
+                    // Add each question to the appropriate column
+                    questions.forEach(question => {
+                        // Default to 'new' if status is undefined
+                        const status = question.status || 'new';
+                        addQuestionToColumn(status, question);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading questions:', error);
+                    alert(`Failed to load questions: ${error.message}`);
+                });
+        }
+
+        // Load questions when page loads
+        loadQuestions();
+    </script>
+</body>
+</html> 

@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Question View</title>
+    <style>
+        :root {
+            --primary-color: #1C9CD9;
+            --secondary-color: #f8f9fa;
+            --accent-color: #e74c3c;
+            --border-color: #dee2e6;
+            --text-color: #343a40;
+            --light-text: #6c757d;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --hover-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            --card-radius: 8px;
+            --transition: all 0.3s ease;
+            
+            /* Uppsala colors - matched with nametag.html */
+            --uppsala-purple: #45005C;
+            --uppsala-purple-comp1: #FF3D9C;
+            --uppsala-purple-comp2: #D63385;
+            --uppsala-green: #00555C;
+            --uppsala-green-comp1: #A6CF38;
+            --uppsala-green-comp2: #008A00;
+            --uppsala-blue: #262262;
+            --uppsala-blue-comp1: #1C9CD9;
+            --uppsala-blue-comp2: #177DB0;
+            --uppsala-gray: #202E45;
+            --uppsala-gray-comp1: #859E96;
+            --uppsala-gray-comp2: #667A75;
+            --uppsala-yellow: #FFDD00;
+        }
+
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow: hidden;
+        }
+
+        .controls {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .controls:hover, .controls.active {
+            transform: translateY(0);
+        }
+
+        .control-handle {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 5px 15px;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--light-text);
+        }
+
+        .control-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .control-label {
+            font-size: 14px;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--light-text);
+        }
+
+        .control-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-option {
+            padding: 8px 12px;
+            background: var(--secondary-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .control-option:hover {
+            background: #e9ecef;
+        }
+
+        .control-option.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+        }
+
+        .color-option:hover, .color-option.active {
+            transform: scale(1.1);
+            border-color: white;
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider {
+            flex: 1;
+        }
+
+        .slider-value {
+            width: 40px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--light-text);
+        }
+
+        /* Question display styles */
+        .question-container {
+            position: fixed;
+            transition: var(--transition);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.5s forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+        }
+
+        .question-container.fade-out {
+            animation: fadeOut 0.5s forwards;
+        }
+
+        .question-container.lower-third {
+            top: 20px;
+            left: 20px;
+            max-width: 450px;
+        }
+
+        .question-container.full-screen {
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            max-width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .question-box {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .full-screen .question-box {
+            background: transparent;
+            box-shadow: none;
+            flex-direction: column;
+            text-align: center;
+            padding: 0;
+        }
+
+        .question-icon {
+            font-size: 24px;
+            margin-right: 15px;
+            color: var(--primary-color);
+        }
+
+        .full-screen .question-icon {
+            font-size: 48px;
+            margin-right: 0;
+            margin-bottom: 20px;
+        }
+
+        .question-text {
+            font-size: 24px;
+            font-weight: 400;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .lower-third .question-text {
+            max-width: 400px;
+        }
+
+        .full-screen .question-text {
+            font-size: 32px;
+            max-width: 750px;
+            text-align: center;
+        }
+
+        .session-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--light-text);
+            z-index: 100;
+        }
+
+        /* No question message - completely hidden when no question is on air */
+        .no-question {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="session-info" id="session-info"></div>
+
+    <div class="controls">
+        <div class="control-handle">Settings</div>
+        <div class="control-row">
+            <div class="control-group">
+                <div class="control-label">Display Mode</div>
+                <div class="control-options">
+                    <div class="control-option active" data-mode="lower-third">Lower Third</div>
+                    <div class="control-option" data-mode="full-screen">Full Screen</div>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="control-label">Background Color</div>
+                <div class="control-options">
+                    <div class="color-option active" style="background-color: #000000;" data-color="#000000"></div>
+                    <div class="color-option" style="background-color: #45005C;" data-color="#45005C"></div>
+                    <div class="color-option" style="background-color: #FF3D9C;" data-color="#FF3D9C"></div>
+                    <div class="color-option" style="background-color: #D63385;" data-color="#D63385"></div>
+                    <div class="color-option" style="background-color: #00555C;" data-color="#00555C"></div>
+                    <div class="color-option" style="background-color: #A6CF38;" data-color="#A6CF38"></div>
+                    <div class="color-option" style="background-color: #008A00;" data-color="#008A00"></div>
+                    <div class="color-option" style="background-color: #262262;" data-color="#262262"></div>
+                    <div class="color-option" style="background-color: #1C9CD9;" data-color="#1C9CD9"></div>
+                    <div class="color-option" style="background-color: #177DB0;" data-color="#177DB0"></div>
+                    <div class="color-option" style="background-color: #202E45;" data-color="#202E45"></div>
+                    <div class="color-option" style="background-color: #859E96;" data-color="#859E96"></div>
+                    <div class="color-option" style="background-color: #667A75;" data-color="#667A75"></div>
+                    <div class="color-option" style="background-color: #FFDD00;" data-color="#FFDD00"></div>
+                </div>
+            </div>
+        </div>
+        <div class="control-row">
+            <div class="control-group">
+                <div class="control-label">Opacity: <span id="opacity-value">0.8</span></div>
+                <div class="slider-container">
+                    <input type="range" min="0.1" max="1" step="0.1" value="0.8" class="slider" id="opacity-slider">
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="control-label">Corner Radius: <span id="radius-value">8</span>px</div>
+                <div class="slider-container">
+                    <input type="range" min="0" max="20" step="1" value="8" class="slider" id="radius-slider">
+                </div>
+            </div>
+        </div>
+        <div class="control-row">
+            <div class="control-group">
+                <div class="control-label">Text Color</div>
+                <div class="control-options">
+                    <div class="color-option active" style="background-color: #ffffff;" data-text-color="#ffffff"></div>
+                    <div class="color-option" style="background-color: #000000;" data-text-color="#000000"></div>
+                    <div class="color-option" style="background-color: #f8f9fa;" data-text-color="#f8f9fa"></div>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="control-label">Gradient</div>
+                <div class="control-options">
+                    <div class="control-option active" data-gradient="none">None</div>
+                    <div class="control-option" data-gradient="linear">Linear</div>
+                    <div class="control-option" data-gradient="radial">Radial</div>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="control-label">Gradient Darkness: <span id="darkness-value">0.2</span></div>
+                <div class="slider-container">
+                    <input type="range" min="0" max="0.5" step="0.05" value="0.2" class="slider" id="darkness-slider">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="question-container lower-third">
+        <div class="question-box">
+            <div class="question-icon">
+                <i class="fas fa-question-circle"></i>
+            </div>
+            <div class="question-text">Waiting for a question...</div>
+        </div>
+    </div>
+
+    <div class="no-question"></div>
+
+    <script>
+        // Settings and state
+        let settings = {
+            mode: 'lower-third',
+            backgroundColor: '#000000',
+            opacity: 0.8,
+            cornerRadius: 8,
+            textColor: '#ffffff',
+            gradient: 'none',
+            gradientDarkness: 0.2
+        };
+
+        // DOM elements
+        const questionContainer = document.querySelector('.question-container');
+        const questionBox = document.querySelector('.question-box');
+        const questionText = document.querySelector('.question-text');
+        const noQuestion = document.querySelector('.no-question');
+        const sessionInfo = document.getElementById('session-info');
+        let currentQuestion = null;
+
+        // Controls
+        const controls = document.querySelector('.controls');
+        const controlHandle = document.querySelector('.control-handle');
+        const modeOptions = document.querySelectorAll('[data-mode]');
+        const colorOptions = document.querySelectorAll('[data-color]');
+        const textColorOptions = document.querySelectorAll('[data-text-color]');
+        const gradientOptions = document.querySelectorAll('[data-gradient]');
+        const opacitySlider = document.getElementById('opacity-slider');
+        const opacityValue = document.getElementById('opacity-value');
+        const radiusSlider = document.getElementById('radius-slider');
+        const radiusValue = document.getElementById('radius-value');
+        const darknessSlider = document.getElementById('darkness-slider');
+        const darknessValue = document.getElementById('darkness-value');
+
+        // Toggle controls visibility
+        controlHandle.addEventListener('click', () => {
+            controls.classList.toggle('active');
+        });
+
+        // Mode selection
+        modeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                modeOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                settings.mode = option.dataset.mode;
+                applySettings();
+            });
+        });
+
+        // Color selection
+        colorOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                colorOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                settings.backgroundColor = option.dataset.color;
+                applySettings();
+            });
+        });
+
+        // Text color selection
+        textColorOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                textColorOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                settings.textColor = option.dataset.textColor;
+                applySettings();
+            });
+        });
+
+        // Gradient selection
+        gradientOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                gradientOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                settings.gradient = option.dataset.gradient;
+                applySettings();
+            });
+        });
+
+        // Opacity slider
+        opacitySlider.addEventListener('input', () => {
+            settings.opacity = parseFloat(opacitySlider.value);
+            opacityValue.textContent = settings.opacity;
+            applySettings();
+        });
+
+        // Radius slider
+        radiusSlider.addEventListener('input', () => {
+            settings.cornerRadius = parseInt(radiusSlider.value);
+            radiusValue.textContent = settings.cornerRadius;
+            applySettings();
+        });
+
+        // Darkness slider
+        darknessSlider.addEventListener('input', () => {
+            settings.gradientDarkness = parseFloat(darknessSlider.value);
+            darknessValue.textContent = settings.gradientDarkness;
+            applySettings();
+        });
+
+        // Apply settings to the question box
+        function applySettings() {
+            // Apply display mode
+            questionContainer.className = `question-container ${settings.mode}`;
+            
+            // Apply background color and opacity
+            const baseColor = settings.backgroundColor;
+            
+            if (settings.mode === 'full-screen') {
+                // For full-screen mode, apply the background to the body
+                if (settings.gradient === 'none') {
+                    document.body.style.background = `rgba(${hexToRgb(baseColor)}, ${settings.opacity})`;
+                } else if (settings.gradient === 'linear') {
+                    const darkColor = darkenColor(baseColor, settings.gradientDarkness);
+                    document.body.style.background = `linear-gradient(to bottom, rgba(${hexToRgb(baseColor)}, ${settings.opacity}), rgba(${hexToRgb(darkColor)}, ${settings.opacity}))`;
+                } else if (settings.gradient === 'radial') {
+                    const darkColor = darkenColor(baseColor, settings.gradientDarkness);
+                    document.body.style.background = `radial-gradient(circle, rgba(${hexToRgb(baseColor)}, ${settings.opacity}), rgba(${hexToRgb(darkColor)}, ${settings.opacity}))`;
+                }
+                
+                // Make the question box transparent in full-screen mode
+                questionBox.style.background = 'transparent';
+                questionBox.style.boxShadow = 'none';
+            } else {
+                // For lower-third mode, reset body background to transparent
+                document.body.style.background = 'transparent';
+                
+                // Apply background to the question box
+                if (settings.gradient === 'none') {
+                    questionBox.style.background = `rgba(${hexToRgb(baseColor)}, ${settings.opacity})`;
+                } else if (settings.gradient === 'linear') {
+                    const darkColor = darkenColor(baseColor, settings.gradientDarkness);
+                    questionBox.style.background = `linear-gradient(to bottom, rgba(${hexToRgb(baseColor)}, ${settings.opacity}), rgba(${hexToRgb(darkColor)}, ${settings.opacity}))`;
+                } else if (settings.gradient === 'radial') {
+                    const darkColor = darkenColor(baseColor, settings.gradientDarkness);
+                    questionBox.style.background = `radial-gradient(circle, rgba(${hexToRgb(baseColor)}, ${settings.opacity}), rgba(${hexToRgb(darkColor)}, ${settings.opacity}))`;
+                }
+                
+                questionBox.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+            }
+            
+            // Apply border radius and text color
+            questionBox.style.borderRadius = `${settings.cornerRadius}px`;
+            questionBox.style.color = settings.textColor;
+            
+            // Update the question icon color to match the text
+            const questionIcon = document.querySelector('.question-icon i');
+            if (questionIcon) {
+                questionIcon.style.color = settings.textColor;
+            }
+            
+            // Save settings to localStorage
+            localStorage.setItem('questionViewSettings', JSON.stringify(settings));
+        }
+
+        // Helper function to convert hex to rgb
+        function hexToRgb(hex) {
+            // Remove # if present
+            hex = hex.replace('#', '');
+            
+            // Parse the hex values
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            
+            return `${r}, ${g}, ${b}`;
+        }
+
+        // Helper function to darken a color
+        function darkenColor(hex, amount) {
+            // Remove # if present
+            hex = hex.replace('#', '');
+            
+            // Parse the hex values
+            let r = parseInt(hex.substring(0, 2), 16);
+            let g = parseInt(hex.substring(2, 4), 16);
+            let b = parseInt(hex.substring(4, 6), 16);
+            
+            // Darken each component
+            r = Math.max(0, Math.floor(r * (1 - amount)));
+            g = Math.max(0, Math.floor(g * (1 - amount)));
+            b = Math.max(0, Math.floor(b * (1 - amount)));
+            
+            // Convert back to hex
+            return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        }
+
+        // Load settings from localStorage
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('questionViewSettings');
+            if (savedSettings) {
+                settings = JSON.parse(savedSettings);
+                
+                // Update UI to match saved settings
+                modeOptions.forEach(option => {
+                    option.classList.toggle('active', option.dataset.mode === settings.mode);
+                });
+                
+                colorOptions.forEach(option => {
+                    option.classList.toggle('active', option.dataset.color === settings.backgroundColor);
+                });
+                
+                textColorOptions.forEach(option => {
+                    option.classList.toggle('active', option.dataset.textColor === settings.textColor);
+                });
+                
+                gradientOptions.forEach(option => {
+                    option.classList.toggle('active', option.dataset.gradient === settings.gradient);
+                });
+                
+                opacitySlider.value = settings.opacity;
+                opacityValue.textContent = settings.opacity;
+                
+                radiusSlider.value = settings.cornerRadius;
+                radiusValue.textContent = settings.cornerRadius;
+                
+                darknessSlider.value = settings.gradientDarkness;
+                darknessValue.textContent = settings.gradientDarkness;
+                
+                applySettings();
+            }
+        }
+
+        // Function to update the question with fade animation
+        function updateQuestion(newQuestion) {
+            // If the question content is the same, don't animate
+            if (currentQuestion && newQuestion && currentQuestion.id === newQuestion.id) {
+                // Still reapply settings in case they changed
+                applySettings();
+                return;
+            }
+            
+            // If we have a current question, fade it out first
+            if (questionContainer.style.display !== 'none') {
+                questionContainer.classList.add('fade-out');
+                
+                setTimeout(() => {
+                    // After fade out, update the content
+                    if (newQuestion) {
+                        questionText.textContent = newQuestion.content;
+                        questionContainer.style.display = 'block';
+                        questionContainer.classList.remove('fade-out');
+                        currentQuestion = newQuestion;
+                        applySettings(); // Apply settings after updating content
+                    } else {
+                        // No question to display
+                        questionContainer.style.display = 'none';
+                        currentQuestion = null;
+                    }
+                }, 500); // Match the fadeOut animation duration
+            } else if (newQuestion) {
+                // If there was no question displayed, just fade in the new one
+                questionText.textContent = newQuestion.content;
+                questionContainer.style.display = 'block';
+                questionContainer.classList.remove('fade-out');
+                currentQuestion = newQuestion;
+                applySettings(); // Apply settings after updating content
+            }
+        }
+
+        // Poll for the current on-air question
+        function pollCurrentQuestion() {
+            // Get session from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionName = urlParams.get('session');
+            
+            if (!sessionName) {
+                // If no session is specified, just show blank
+                document.body.style.background = 'transparent';
+                questionContainer.style.display = 'none';
+                return;
+            }
+            
+            // Check if current session matches the one in localStorage
+            const currentSessionJSON = localStorage.getItem('currentSession');
+            let currentSession = null;
+            
+            try {
+                // Try to parse as JSON first (new format)
+                currentSession = JSON.parse(currentSessionJSON);
+                
+                // If it's an object with a name property, use that
+                if (currentSession && typeof currentSession === 'object' && currentSession.name) {
+                    if (currentSession.name !== sessionName) {
+                        console.log('Session mismatch:', currentSession.name, 'vs', sessionName);
+                        // If session doesn't match, just show blank
+                        document.body.style.background = 'transparent';
+                        questionContainer.style.display = 'none';
+                        return;
+                    }
+                }
+            } catch (e) {
+                // If it's not JSON, it might be the old format (just the name)
+                if (currentSessionJSON && currentSessionJSON !== sessionName) {
+                    console.log('Session mismatch (old format):', currentSessionJSON, 'vs', sessionName);
+                    // If session doesn't match, just show blank
+                    document.body.style.background = 'transparent';
+                    questionContainer.style.display = 'none';
+                    return;
+                }
+            }
+            
+            // Store the current session in the new format
+            localStorage.setItem('currentSession', JSON.stringify({
+                name: sessionName,
+                // We don't have the password here, but that's okay for this check
+                lastAccessed: new Date().toISOString()
+            }));
+            
+            // Update page title and session info
+            document.title = `Question View - ${sessionName}`;
+            sessionInfo.textContent = `Session: ${sessionName}`;
+            
+            fetch(`./api/questions/on_air?session=${encodeURIComponent(sessionName)}`)
+                .then(response => {
+                    if (response.status === 404) {
+                        // No question is on air, show blank screen
+                        // This is expected behavior, not an error
+                        console.log('No question currently on air');
+                        document.body.style.background = 'transparent';
+                        updateQuestion(null);
+                        return null;
+                    }
+                    
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.error || `Server returned ${response.status}: ${response.statusText}`);
+                        });
+                    }
+                    
+                    return response.json();
+                })
+                .then(question => {
+                    if (!question) {
+                        // No question is on air, already handled in the previous step
+                        return;
+                    }
+                    
+                    // Check if we have a valid question
+                    if (!question.content) {
+                        console.error('Invalid question data received:', question);
+                        document.body.style.background = 'transparent';
+                        updateQuestion(null);
+                        return;
+                    }
+                    
+                    console.log('Current on-air question:', question);
+                    
+                    // Update the question display with fade animation
+                    updateQuestion(question);
+                })
+                .catch(error => {
+                    // Only log real errors, not 404s which are expected
+                    if (!error.message.includes('404')) {
+                        console.error('Error fetching on-air question:', error);
+                    }
+                    // On error, show blank screen
+                    document.body.style.background = 'transparent';
+                    updateQuestion(null);
+                });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+            pollCurrentQuestion();
+            
+            // Poll for updates every 2 seconds
+            setInterval(pollCurrentQuestion, 2000);
+        });
+    </script>
+</body>
+</html> 

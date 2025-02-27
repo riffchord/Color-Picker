@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Question Manager - Sessions</title>
+    <style>
+        :root {
+            --primary-color: #1C9CD9;
+            --secondary-color: #f8f9fa;
+            --accent-color: #e74c3c;
+            --border-color: #dee2e6;
+            --text-color: #343a40;
+            --light-text: #6c757d;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --hover-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            --card-radius: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            margin: 0;
+            padding: 30px;
+            background: #f5f5f5;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+            color: var(--text-color);
+            letter-spacing: -0.5px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--hover-shadow);
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .tab.active {
+            border-bottom-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--card-radius);
+            font-family: 'Source Sans Pro', sans-serif;
+            box-sizing: border-box;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(28, 156, 217, 0.2);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--card-radius);
+            cursor: pointer;
+            font-family: 'Source Sans Pro', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #1689c3;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .session-list {
+            margin-top: 20px;
+        }
+
+        .session-item {
+            background: var(--secondary-color);
+            border-radius: var(--card-radius);
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .session-item:hover {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .session-name {
+            font-weight: 600;
+        }
+
+        .session-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.9rem;
+            width: auto;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #e9ecef;
+        }
+
+        .error-message {
+            color: var(--accent-color);
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+
+        .success-message {
+            color: #2ecc71;
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: var(--light-text);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .back-link:hover {
+            color: var(--primary-color);
+        }
+
+        .back-link i {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Main Menu</a>
+        <h1>Question Manager</h1>
+        
+        <div class="card">
+            <div class="tabs">
+                <div class="tab active" data-tab="create">Create Session</div>
+                <div class="tab" data-tab="join">Join Session</div>
+                <div class="tab" data-tab="recent">Recent Sessions</div>
+            </div>
+            
+            <div class="tab-content active" id="create-tab">
+                <form id="create-session-form">
+                    <div class="form-group">
+                        <label for="create-session-name">Session Name</label>
+                        <input type="text" id="create-session-name" placeholder="Enter a unique session name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="create-session-password">Session Password</label>
+                        <input type="password" id="create-session-password" placeholder="Create a password" required>
+                    </div>
+                    <button type="submit">Create Session</button>
+                    <p id="create-error" class="error-message hidden"></p>
+                    <p id="create-success" class="success-message hidden"></p>
+                </form>
+            </div>
+            
+            <div class="tab-content" id="join-tab">
+                <form id="join-session-form">
+                    <div class="form-group">
+                        <label for="join-session-name">Session Name</label>
+                        <input type="text" id="join-session-name" placeholder="Enter session name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="join-session-password">Session Password</label>
+                        <input type="password" id="join-session-password" placeholder="Enter session password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="join-session-type">I want to:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <button type="button" id="btn-manage" class="btn-secondary" style="flex: 1;">Manage Questions</button>
+                            <button type="button" id="btn-view" class="btn-secondary" style="flex: 1;">View Questions</button>
+                        </div>
+                    </div>
+                    <p id="join-error" class="error-message hidden"></p>
+                </form>
+            </div>
+            
+            <div class="tab-content" id="recent-tab">
+                <div id="recent-sessions" class="session-list">
+                    <!-- Recent sessions will be loaded here -->
+                    <p id="no-sessions" class="hidden">No recent sessions found.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and tab contents
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+            });
+        });
+
+        // Load recent sessions from localStorage
+        function loadRecentSessions() {
+            const recentSessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
+            const recentSessionsContainer = document.getElementById('recent-sessions');
+            const noSessionsMessage = document.getElementById('no-sessions');
+            
+            // Clear previous content
+            recentSessionsContainer.innerHTML = '';
+            
+            if (recentSessions.length === 0) {
+                noSessionsMessage.classList.remove('hidden');
+                return;
+            }
+            
+            noSessionsMessage.classList.add('hidden');
+            
+            // Add each session to the list
+            recentSessions.forEach(session => {
+                const sessionItem = document.createElement('div');
+                sessionItem.className = 'session-item';
+                sessionItem.innerHTML = `
+                    <div class="session-name">${session.name}</div>
+                    <div class="session-actions">
+                        <button class="btn-small" onclick="joinSession('${session.name}', '${session.password}', 'manage')">Manage</button>
+                        <button class="btn-small" onclick="joinSession('${session.name}', '${session.password}', 'view')">View</button>
+                    </div>
+                `;
+                recentSessionsContainer.appendChild(sessionItem);
+            });
+        }
+
+        // Create a new session
+        document.getElementById('create-session-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const sessionName = document.getElementById('create-session-name').value.trim();
+            const sessionPassword = document.getElementById('create-session-password').value.trim();
+            const errorElement = document.getElementById('create-error');
+            const successElement = document.getElementById('create-success');
+            
+            // Basic validation
+            if (!sessionName || !sessionPassword) {
+                errorElement.textContent = 'Please enter both session name and password.';
+                errorElement.classList.remove('hidden');
+                successElement.classList.add('hidden');
+                return;
+            }
+            
+            // Check if session already exists
+            const existingSessions = JSON.parse(localStorage.getItem('sessions') || '{}');
+            if (existingSessions[sessionName]) {
+                errorElement.textContent = 'A session with this name already exists. Please choose another name.';
+                errorElement.classList.remove('hidden');
+                successElement.classList.add('hidden');
+                return;
+            }
+            
+            // Create the session
+            existingSessions[sessionName] = {
+                password: sessionPassword,
+                created: new Date().toISOString()
+            };
+            localStorage.setItem('sessions', JSON.stringify(existingSessions));
+            
+            // Add to recent sessions
+            const recentSessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
+            recentSessions.unshift({
+                name: sessionName,
+                password: sessionPassword,
+                lastAccessed: new Date().toISOString()
+            });
+            
+            // Keep only the 5 most recent sessions
+            if (recentSessions.length > 5) {
+                recentSessions.pop();
+            }
+            
+            localStorage.setItem('recentSessions', JSON.stringify(recentSessions));
+            
+            // Show success message
+            errorElement.classList.add('hidden');
+            successElement.textContent = 'Session created successfully!';
+            successElement.classList.remove('hidden');
+            
+            // Reset form
+            document.getElementById('create-session-form').reset();
+            
+            // Reload recent sessions
+            loadRecentSessions();
+            
+            // Redirect to questions page after a short delay
+            setTimeout(() => {
+                joinSession(sessionName, sessionPassword, 'manage');
+            }, 1000);
+        });
+
+        // Join session buttons
+        document.getElementById('btn-manage').addEventListener('click', function() {
+            const sessionName = document.getElementById('join-session-name').value.trim();
+            const sessionPassword = document.getElementById('join-session-password').value.trim();
+            joinSession(sessionName, sessionPassword, 'manage');
+        });
+
+        document.getElementById('btn-view').addEventListener('click', function() {
+            const sessionName = document.getElementById('join-session-name').value.trim();
+            const sessionPassword = document.getElementById('join-session-password').value.trim();
+            joinSession(sessionName, sessionPassword, 'view');
+        });
+
+        // Join session function
+        function joinSession(sessionName, sessionPassword, type) {
+            const errorElement = document.getElementById('join-error');
+            
+            // Basic validation
+            if (!sessionName || !sessionPassword) {
+                errorElement.textContent = 'Please enter both session name and password.';
+                errorElement.classList.remove('hidden');
+                return;
+            }
+            
+            // Check if session exists
+            const existingSessions = JSON.parse(localStorage.getItem('sessions') || '{}');
+            if (!existingSessions[sessionName]) {
+                errorElement.textContent = 'Session not found. Please check the name and try again.';
+                errorElement.classList.remove('hidden');
+                return;
+            }
+            
+            // Check password
+            if (existingSessions[sessionName].password !== sessionPassword) {
+                errorElement.textContent = 'Incorrect password. Please try again.';
+                errorElement.classList.remove('hidden');
+                return;
+            }
+            
+            // Update recent sessions
+            const recentSessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
+            const existingIndex = recentSessions.findIndex(s => s.name === sessionName);
+            
+            if (existingIndex !== -1) {
+                // Move to the top of the list
+                const session = recentSessions.splice(existingIndex, 1)[0];
+                session.lastAccessed = new Date().toISOString();
+                recentSessions.unshift(session);
+            } else {
+                // Add to the top of the list
+                recentSessions.unshift({
+                    name: sessionName,
+                    password: sessionPassword,
+                    lastAccessed: new Date().toISOString()
+                });
+                
+                // Keep only the 5 most recent sessions
+                if (recentSessions.length > 5) {
+                    recentSessions.pop();
+                }
+            }
+            
+            localStorage.setItem('recentSessions', JSON.stringify(recentSessions));
+            
+            // Store current session
+            localStorage.setItem('currentSession', JSON.stringify({
+                name: sessionName,
+                password: sessionPassword
+            }));
+            
+            // Redirect to appropriate page
+            if (type === 'manage') {
+                window.location.href = `questions.html?session=${encodeURIComponent(sessionName)}`;
+            } else {
+                window.location.href = `question-view.html?session=${encodeURIComponent(sessionName)}`;
+            }
+        }
+
+        // Load recent sessions on page load
+        loadRecentSessions();
+    </script>
+</body>
+</html> 
