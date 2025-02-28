@@ -6,6 +6,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>Live Chat Questions</title>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
             --primary-color: #1C9CD9;
@@ -435,6 +436,90 @@
         // Store sortable instances for later reference
         const sortableInstances = {};
         
+        // Track recently added questions to prevent duplicates
+        const recentlyAddedQuestions = new Set();
+        
+        // Track recently updated questions to prevent duplicates
+        const recentlyUpdatedQuestions = new Set();
+        
+        // Track recently deleted questions to prevent duplicates
+        const recentlyDeletedQuestions = new Set();
+        
+        // Initialize Socket.IO connection
+        const socket = io();
+        
+        // Get session from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionName = urlParams.get('session');
+        
+        // Join the session room
+        if (sessionName) {
+            socket.emit('join-session', sessionName);
+        }
+        
+        // Listen for real-time updates
+        socket.on('question-added', (question) => {
+            console.log('Received new question:', question);
+            
+            // Check if this question was just added by this client
+            if (recentlyAddedQuestions.has(question.id)) {
+                console.log('Ignoring duplicate question that was just added locally:', question.id);
+                return;
+            }
+            
+            addQuestionToColumn('new', question);
+        });
+        
+        socket.on('question-updated', (question) => {
+            console.log('Received updated question:', question);
+            
+            // Check if this question was just updated by this client
+            if (recentlyUpdatedQuestions.has(question.id)) {
+                console.log('Ignoring duplicate update that was just made locally:', question.id);
+                return;
+            }
+            
+            // Find the question element
+            const questionElement = document.querySelector(`.question-card[data-id="${question.id}"]`);
+            if (questionElement) {
+                // Update the content
+                const contentElement = questionElement.querySelector('.question-content');
+                if (contentElement) {
+                    contentElement.textContent = question.content;
+                }
+                
+                // If status changed, move to the appropriate column
+                const currentColumn = questionElement.closest('.column').id;
+                if (currentColumn !== question.status) {
+                    document.querySelector(`#${question.status} .column-content`).appendChild(questionElement);
+                }
+            } else {
+                // If the question doesn't exist, add it to the appropriate column
+                addQuestionToColumn(question.status, question);
+            }
+        });
+        
+        socket.on('question-deleted', (data) => {
+            console.log('Received deleted question:', data);
+            
+            // Check if this question was just deleted by this client
+            if (recentlyDeletedQuestions.has(data.id)) {
+                console.log('Ignoring duplicate deletion that was just made locally:', data.id);
+                return;
+            }
+            
+            // Find the question element
+            const questionElement = document.querySelector(`.question-card[data-id="${data.id}"]`);
+            if (questionElement) {
+                // Remove with animation
+                questionElement.style.opacity = '0';
+                questionElement.style.height = '0';
+                setTimeout(() => {
+                    questionElement.remove();
+                }, 300);
+            }
+        });
+        
         // Initialize Sortable for each column content (not the entire column)
         document.querySelectorAll('.column-content').forEach(columnContent => {
             const sortable = new Sortable(columnContent, {
@@ -584,6 +669,16 @@
             .then(question => {
                 console.log('Saved new question:', question);
                 
+                // Add the question ID to the recently added set to prevent duplicates
+                // Store the ID as a number to ensure consistent comparison
+                recentlyAddedQuestions.add(question.id);
+                
+                // Set a timeout to remove the ID from the set after a short delay
+                // This helps prevent memory leaks while still catching duplicates
+                setTimeout(() => {
+                    recentlyAddedQuestions.delete(question.id);
+                }, 5000);
+                
                 // Add the new question to the column
                 addQuestionToColumn('new', question);
                 
@@ -686,6 +781,17 @@
             const urlParams = new URLSearchParams(window.location.search);
             const sessionName = urlParams.get('session');
 
+            // Show updating indicator
+            const updatingIndicator = document.createElement('div');
+            updatingIndicator.className = 'updating-indicator';
+            updatingIndicator.textContent = 'Updating...';
+            questionCard.appendChild(updatingIndicator);
+            
+            // Disable the textarea and buttons
+            textarea.disabled = true;
+            const buttons = questionCard.querySelectorAll('button');
+            buttons.forEach(btn => btn.disabled = true);
+
             // Update the question on the server
             fetch(`./api/questions/${questionId}?session=${encodeURIComponent(sessionName)}`, {
                 method: 'PUT',
@@ -694,8 +800,30 @@
                 },
                 body: JSON.stringify({ content })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || `Server returned ${response.status}: ${response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
             .then(question => {
+                console.log('Updated question:', question);
+                
+                // Add the question ID to the recently updated set to prevent duplicates
+                recentlyUpdatedQuestions.add(question.id);
+                
+                // Set a timeout to remove the ID from the set after a short delay
+                setTimeout(() => {
+                    recentlyUpdatedQuestions.delete(question.id);
+                }, 5000);
+                
+                // Remove updating indicator
+                if (updatingIndicator.parentNode) {
+                    updatingIndicator.remove();
+                }
+                
                 // Restore question card with updated content
                 restoreQuestionCard(questionCard, questionId, content);
                 
@@ -707,14 +835,18 @@
             })
             .catch(error => {
                 console.error('Error updating question:', error);
-                // Restore question card with original content
-                restoreQuestionCard(questionCard, questionId, content);
                 
-                // Re-enable Sortable
-                const columnId = columnElement.id;
-                if (sortableInstances[columnId]) {
-                    sortableInstances[columnId].option('disabled', false);
+                // Remove updating indicator
+                if (updatingIndicator.parentNode) {
+                    updatingIndicator.remove();
                 }
+                
+                // Re-enable the textarea and buttons
+                textarea.disabled = false;
+                buttons.forEach(btn => btn.disabled = false);
+                
+                // Show error message
+                alert(`Failed to update question: ${error.message}`);
             });
         }
 
@@ -786,6 +918,14 @@
             })
             .then(result => {
                 console.log('Deleted question:', result);
+                
+                // Add the question ID to the recently deleted set to prevent duplicates
+                recentlyDeletedQuestions.add(parseInt(questionId));
+                
+                // Set a timeout to remove the ID from the set after a short delay
+                setTimeout(() => {
+                    recentlyDeletedQuestions.delete(parseInt(questionId));
+                }, 5000);
                 
                 // Remove the question element with animation
                 questionElement.style.opacity = '0';
@@ -904,6 +1044,14 @@
             })
             .then(updatedQuestion => {
                 console.log('Updated question status:', updatedQuestion);
+                
+                // Add the question ID to the recently updated set to prevent duplicates
+                recentlyUpdatedQuestions.add(updatedQuestion.id);
+                
+                // Set a timeout to remove the ID from the set after a short delay
+                setTimeout(() => {
+                    recentlyUpdatedQuestions.delete(updatedQuestion.id);
+                }, 5000);
                 
                 // Remove updating indicator
                 questionElement.classList.remove('updating');

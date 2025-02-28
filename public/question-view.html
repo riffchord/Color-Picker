@@ -6,6 +6,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>Question View</title>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
             --primary-color: #1C9CD9;
@@ -399,6 +400,60 @@
         let currentQuestion = null;
         let controlsTimeout;
 
+        // Initialize Socket.IO connection
+        const socket = io();
+        
+        // Get session from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionName = urlParams.get('session');
+        
+        // Join the session room if a session is specified
+        if (sessionName) {
+            socket.emit('join-session', sessionName);
+            
+            // Update page title and session info
+            document.title = `Question View - ${sessionName}`;
+            sessionInfo.textContent = `Session: ${sessionName}`;
+        } else {
+            // If no session is specified, just show blank
+            document.body.style.background = 'transparent';
+            questionContainer.style.display = 'none';
+        }
+        
+        // Listen for question updates
+        socket.on('question-updated', (question) => {
+            console.log('Received updated question:', question);
+            
+            // If the question is on air, display it
+            if (question.status === 'on_air') {
+                updateQuestion(question);
+            } 
+            // If the current question is no longer on air, hide it
+            else if (currentQuestion && currentQuestion.id === question.id) {
+                updateQuestion(null);
+            }
+        });
+        
+        // Listen for new questions
+        socket.on('question-added', (question) => {
+            console.log('Received new question:', question);
+            
+            // If the new question is on air, display it
+            if (question.status === 'on_air') {
+                updateQuestion(question);
+            }
+        });
+        
+        // Listen for question deletions
+        socket.on('question-deleted', (data) => {
+            console.log('Received deleted question:', data);
+            
+            // If the deleted question is the one we're displaying, hide it
+            if (currentQuestion && currentQuestion.id === data.id) {
+                updateQuestion(null);
+            }
+        });
+
         // Add event listeners for showing/hiding controls based on mouse position
         document.addEventListener('mousemove', function(e) {
             // Show controls when mouse is near the top of the screen (within 50px)
@@ -707,22 +762,12 @@
             }
         }
 
-        // Poll for the current on-air question
-        function pollCurrentQuestion() {
+        // Initial fetch for the current on-air question
+        function fetchCurrentQuestion() {
             // Get session from URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const sessionName = urlParams.get('session');
-            
             if (!sessionName) {
-                // If no session is specified, just show blank
-                document.body.style.background = 'transparent';
-                questionContainer.style.display = 'none';
                 return;
             }
-            
-            // Update page title and session info
-            document.title = `Question View - ${sessionName}`;
-            sessionInfo.textContent = `Session: ${sessionName}`;
             
             fetch(`./api/questions/on_air?session=${encodeURIComponent(sessionName)}`)
                 .then(response => {
@@ -779,10 +824,7 @@
             document.body.style.background = 'transparent';
             
             loadSettings();
-            pollCurrentQuestion();
-            
-            // Poll for updates every 2 seconds
-            setInterval(pollCurrentQuestion, 2000);
+            fetchCurrentQuestion(); // Initial fetch
             
             // Force apply settings after a short delay to ensure background is applied
             setTimeout(() => {
