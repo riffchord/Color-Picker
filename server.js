@@ -1062,6 +1062,79 @@ app.post('/api/sessions/verify', (req, res) => {
     );
 });
 
+// Delete a session
+app.delete('/api/sessions/:sessionName', (req, res) => {
+    const sessionName = req.params.sessionName;
+    const { password } = req.body;
+    
+    console.log(`Attempting to delete session: ${sessionName}`);
+    
+    if (!password) {
+        return res.status(400).json({ error: 'Password is required to delete a session' });
+    }
+    
+    // First verify the session credentials
+    db.get(
+        'SELECT id FROM sessions WHERE name = ? AND password = ?',
+        [sessionName, password],
+        (err, session) => {
+            if (err) {
+                console.error('Error finding session:', err);
+                return res.status(500).json({ error: 'Database error: ' + err.message });
+            }
+            
+            if (!session) {
+                return res.status(401).json({ error: 'Invalid session name or password' });
+            }
+            
+            const sessionId = session.id;
+            
+            // Begin a transaction to delete the session and its questions
+            db.serialize(() => {
+                db.run('BEGIN TRANSACTION');
+                
+                // First delete all questions associated with this session
+                db.run(
+                    'DELETE FROM questions WHERE session_id = ?',
+                    [sessionId],
+                    (err) => {
+                        if (err) {
+                            console.error('Error deleting session questions:', err);
+                            db.run('ROLLBACK');
+                            return res.status(500).json({ error: 'Failed to delete session questions: ' + err.message });
+                        }
+                        
+                        // Then delete the session itself
+                        db.run(
+                            'DELETE FROM sessions WHERE id = ?',
+                            [sessionId],
+                            function(err) {
+                                if (err) {
+                                    console.error('Error deleting session:', err);
+                                    db.run('ROLLBACK');
+                                    return res.status(500).json({ error: 'Failed to delete session: ' + err.message });
+                                }
+                                
+                                if (this.changes === 0) {
+                                    db.run('ROLLBACK');
+                                    return res.status(404).json({ error: 'Session not found' });
+                                }
+                                
+                                db.run('COMMIT');
+                                console.log(`Successfully deleted session ${sessionName} and its questions`);
+                                res.json({ 
+                                    success: true, 
+                                    message: `Session "${sessionName}" and all its questions have been deleted` 
+                                });
+                            }
+                        );
+                    }
+                );
+            });
+        }
+    );
+});
+
 // Update question content
 app.put('/api/questions/:id', (req, res) => {
     const questionId = req.params.id;

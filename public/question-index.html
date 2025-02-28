@@ -43,6 +43,14 @@
             letter-spacing: -0.5px;
         }
 
+        h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: var(--text-color);
+            letter-spacing: -0.5px;
+        }
+
         .card {
             background: white;
             border-radius: 12px;
@@ -166,6 +174,15 @@
             width: auto;
         }
 
+        .btn-delete {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #c0392b;
+        }
+
         .btn-secondary {
             background-color: var(--secondary-color);
             color: var(--text-color);
@@ -207,6 +224,34 @@
         .back-link i {
             margin-right: 5px;
         }
+
+        /* Additional styles for the info box */
+        .info-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid var(--primary-color);
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: var(--card-radius);
+            display: flex;
+            align-items: flex-start;
+            color: var(--text-color);
+        }
+        
+        .info-box i {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-right: 15px;
+            margin-top: 3px;
+        }
+        
+        .info-box p {
+            margin: 0 0 8px 0;
+            line-height: 1.5;
+        }
+        
+        .info-box p:last-child {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -218,7 +263,6 @@
             <div class="tabs">
                 <div class="tab active" data-tab="create">Create Session</div>
                 <div class="tab" data-tab="join">Join Session</div>
-                <div class="tab" data-tab="recent">Recent Sessions</div>
             </div>
             
             <div class="tab-content active" id="create-tab">
@@ -257,12 +301,18 @@
                     <p id="join-error" class="error-message hidden"></p>
                 </form>
             </div>
-            
-            <div class="tab-content" id="recent-tab">
-                <div id="recent-sessions" class="session-list">
-                    <!-- Recent sessions will be loaded here -->
-                    <p id="no-sessions" class="hidden">No recent sessions found.</p>
-                </div>
+        </div>
+        
+        <!-- Recent Sessions Card -->
+        <div class="card">
+            <h2>Recent Sessions</h2>
+            <div id="recent-sessions" class="session-list">
+                <!-- Recent sessions will be loaded here -->
+            </div>
+            <div id="no-sessions-info" class="info-box hidden">
+                <i class="fas fa-info-circle"></i>
+                <p>You don't have any recent sessions. Sessions you create or join will appear here for quick access.</p>
+              
             </div>
         </div>
     </div>
@@ -285,17 +335,19 @@
         function loadRecentSessions() {
             const recentSessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
             const recentSessionsContainer = document.getElementById('recent-sessions');
-            const noSessionsMessage = document.getElementById('no-sessions');
+            const noSessionsInfo = document.getElementById('no-sessions-info');
             
             // Clear previous content
             recentSessionsContainer.innerHTML = '';
             
             if (recentSessions.length === 0) {
-                noSessionsMessage.classList.remove('hidden');
+                // Show the informative message when no sessions exist
+                noSessionsInfo.classList.remove('hidden');
                 return;
             }
             
-            noSessionsMessage.classList.add('hidden');
+            // Hide the informative message if sessions exist
+            noSessionsInfo.classList.add('hidden');
             
             // Add each session to the list
             recentSessions.forEach(session => {
@@ -306,6 +358,7 @@
                     <div class="session-actions">
                         <button class="btn-small" onclick="joinSession('${session.name}', '${session.password}', 'manage')">Manage</button>
                         <button class="btn-small" onclick="joinSession('${session.name}', '${session.password}', 'view')">View</button>
+                        <button class="btn-small btn-delete" onclick="deleteSession('${session.name}')"><i class="fas fa-trash"></i></button>
                     </div>
                 `;
                 recentSessionsContainer.appendChild(sessionItem);
@@ -457,7 +510,14 @@
                 
                 // Redirect to questions page after a short delay
                 setTimeout(() => {
-                    joinSession(sessionName, sessionPassword, 'manage');
+                    // Store current session
+                    localStorage.setItem('currentSession', JSON.stringify({
+                        name: sessionName,
+                        password: sessionPassword
+                    }));
+                    
+                    // Redirect to questions management page
+                    window.location.href = `questions.html?session=${encodeURIComponent(sessionName)}`;
                 }, 1000);
             })
             .catch(error => {
@@ -480,6 +540,86 @@
             const sessionPassword = document.getElementById('join-session-password').value.trim();
             joinSession(sessionName, sessionPassword, 'view');
         });
+
+        // Function to delete a session
+        function deleteSession(sessionName) {
+            if (!confirm(`Are you sure you want to delete the session "${sessionName}"?`)) {
+                return;
+            }
+            
+            // Get session from localStorage
+            const recentSessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
+            const sessionIndex = recentSessions.findIndex(s => s.name === sessionName);
+            
+            if (sessionIndex === -1) {
+                alert('Session not found in recent sessions.');
+                return;
+            }
+            
+            // Get the session password for authentication
+            const sessionPassword = recentSessions[sessionIndex].password;
+            
+            // Try to delete the session on the server, but also handle the case where the endpoint doesn't exist
+            fetch(`./api/sessions/${encodeURIComponent(sessionName)}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    password: sessionPassword
+                })
+            })
+            .then(response => {
+                // If server returns 404, the endpoint doesn't exist yet
+                if (response.status === 404) {
+                    console.log('Delete session endpoint not implemented on server, removing from local storage only');
+                    return { success: true, message: 'Session removed from local storage only' };
+                }
+                
+                if (!response.ok) {
+                    // Try to parse JSON response, but handle HTML responses too
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        return response.json().then(data => {
+                            throw new Error(data.error || `Server returned ${response.status}`);
+                        });
+                    } else {
+                        throw new Error(`Server returned ${response.status}`);
+                    }
+                }
+                
+                // Try to parse JSON, but handle if it's not JSON
+                try {
+                    return response.json();
+                } catch (e) {
+                    return { success: true };
+                }
+            })
+            .then(result => {
+                console.log('Deleted session result:', result);
+                
+                // Remove from localStorage
+                recentSessions.splice(sessionIndex, 1);
+                localStorage.setItem('recentSessions', JSON.stringify(recentSessions));
+                
+                // Reload the sessions list
+                loadRecentSessions();
+                
+                // Show success message
+                alert(`Session "${sessionName}" has been removed from your recent sessions.`);
+            })
+            .catch(error => {
+                console.error('Error deleting session:', error);
+                
+                // Even if server deletion fails, still remove from localStorage if user confirms
+                if (confirm(`Server error: ${error.message}. Would you still like to remove this session from your local list?`)) {
+                    recentSessions.splice(sessionIndex, 1);
+                    localStorage.setItem('recentSessions', JSON.stringify(recentSessions));
+                    loadRecentSessions();
+                    alert(`Session "${sessionName}" has been removed from your recent sessions.`);
+                }
+            });
+        }
 
         // Load recent sessions on page load
         loadRecentSessions();

@@ -46,7 +46,9 @@
         .tools-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
+            column-gap: 20px;
+            row-gap: 60px;
+            align-items: start;
         }
 
         .tool-card {
@@ -57,7 +59,8 @@
             transition: var(--transition);
             display: flex;
             flex-direction: column;
-            height: 100%;
+            height: calc(100% - 10px);
+            margin-bottom: 10px;
         }
 
         .tool-card:hover {
@@ -112,7 +115,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Tools Dashboard</h1>
+        <h1>On-Air Graphics Toolkit</h1>
         
         <div class="tools-grid">
             <div class="tool-card">

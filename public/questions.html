@@ -395,10 +395,66 @@
         .question-card.deleting {
             pointer-events: none;
         }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto 20px auto;
+            padding: 0 20px;
+        }
+
+        .header-container h1 {
+            margin: 0;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .view-link {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: var(--card-radius);
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .view-link:hover {
+            background-color: #1689c3;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .view-link i {
+            margin-right: 8px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            color: var(--light-text);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .back-link:hover {
+            color: var(--primary-color);
+        }
+
+        .back-link i {
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
-    <h1>Live Question Management</h1>
+    <div class="header-container">
+        <a href="question-index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Sessions</a>
+        <h1>Live Question Management</h1>
+        <a href="#" id="view-link" class="view-link" target="_blank"><i class="fas fa-external-link-alt"></i> Open View</a>
+    </div>
     <div class="kanban">
         <div class="column" id="new">
             <h2 class="column-header">New Questions</h2>
@@ -1107,6 +1163,12 @@
             
             // Update page title with session name
             document.title = `Questions - ${sessionName}`;
+            
+            // Update view link with the correct session
+            const viewLink = document.getElementById('view-link');
+            if (viewLink) {
+                viewLink.href = `question-view.html?session=${encodeURIComponent(sessionName)}`;
+            }
             
             // Fetch questions for this session
             fetch(`./api/questions?session=${encodeURIComponent(sessionName)}`)
