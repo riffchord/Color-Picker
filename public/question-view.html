@@ -401,17 +401,20 @@
         let controlsTimeout;
 
         // Initialize Socket.IO connection with options for cross-domain
-        const socket = io(window.location.origin, {
+        const socket = io({
             path: '/socket.io',
-            transports: ['websocket', 'polling'],
+            transports: ['polling', 'websocket'],
             reconnection: true,
             reconnectionAttempts: 5,
-            reconnectionDelay: 1000
+            reconnectionDelay: 1000,
+            timeout: 20000,
+            autoConnect: true,
+            forceNew: true
         });
         
         // Add connection status handling
         socket.on('connect', () => {
-            console.log('Socket.IO connected successfully');
+            console.log('Socket.IO connected successfully with ID:', socket.id);
             
             // Get session from URL parameters
             const urlParams = new URLSearchParams(window.location.search);
@@ -420,10 +423,14 @@
             // Join the session room if a session is specified
             if (sessionName) {
                 socket.emit('join-session', sessionName);
+                console.log('Joining session:', sessionName);
                 
                 // Update page title and session info
                 document.title = `Question View - ${sessionName}`;
                 sessionInfo.textContent = `Session: ${sessionName}`;
+                
+                // Fetch current question after connection is established
+                fetchCurrentQuestion(sessionName);
             } else {
                 // If no session is specified, just show blank
                 document.body.style.background = 'transparent';
@@ -433,6 +440,30 @@
         
         socket.on('connect_error', (error) => {
             console.error('Socket.IO connection error:', error);
+        });
+        
+        socket.on('connect_timeout', () => {
+            console.error('Socket.IO connection timeout');
+        });
+
+        socket.on('reconnect', (attemptNumber) => {
+            console.log('Socket.IO reconnected after', attemptNumber, 'attempts');
+            
+            // Re-join session after reconnection
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionName = urlParams.get('session');
+            if (sessionName) {
+                socket.emit('join-session', sessionName);
+                fetchCurrentQuestion(sessionName);
+            }
+        });
+
+        socket.on('reconnect_error', (error) => {
+            console.error('Socket.IO reconnection error:', error);
+        });
+
+        socket.on('reconnect_failed', () => {
+            console.error('Socket.IO reconnection failed after all attempts');
         });
         
         // Listen for question updates
@@ -778,11 +809,16 @@
         }
 
         // Initial fetch for the current on-air question
-        function fetchCurrentQuestion() {
-            // Get session from URL parameters
+        function fetchCurrentQuestion(sessionName) {
             if (!sessionName) {
-                return;
+                const urlParams = new URLSearchParams(window.location.search);
+                sessionName = urlParams.get('session');
+                if (!sessionName) {
+                    return;
+                }
             }
+            
+            console.log('Fetching current on-air question for session:', sessionName);
             
             fetch(`./api/questions/on_air?session=${encodeURIComponent(sessionName)}`)
                 .then(response => {
@@ -839,7 +875,6 @@
             document.body.style.background = 'transparent';
             
             loadSettings();
-            fetchCurrentQuestion(); // Initial fetch
             
             // Force apply settings after a short delay to ensure background is applied
             setTimeout(() => {

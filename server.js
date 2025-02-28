@@ -13,7 +13,11 @@ const io = socketIo(server, {
         allowedHeaders: ["Content-Type"],
         credentials: true
     },
-    transports: ['websocket', 'polling']
+    path: '/socket.io',
+    transports: ['websocket', 'polling'],
+    allowEIO3: true, // Allow Engine.IO v3 client to connect
+    pingTimeout: 60000, // Increase ping timeout for slower connections
+    pingInterval: 25000 // Increase ping interval
 });
 
 app.use(express.json());
@@ -27,17 +31,26 @@ app.use(express.static('public')); // Serve static files from 'public' directory
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-    console.log('New client connected');
+    console.log('New client connected', socket.id);
     
     // Join a specific session room
     socket.on('join-session', (sessionName) => {
-        console.log(`Client joined session: ${sessionName}`);
+        console.log(`Client ${socket.id} joined session: ${sessionName}`);
         socket.join(sessionName);
     });
     
-    socket.on('disconnect', () => {
-        console.log('Client disconnected');
+    socket.on('disconnect', (reason) => {
+        console.log(`Client ${socket.id} disconnected: ${reason}`);
     });
+
+    socket.on('error', (error) => {
+        console.error(`Socket error for client ${socket.id}:`, error);
+    });
+});
+
+// Log Socket.IO errors
+io.engine.on('connection_error', (err) => {
+    console.error('Connection error:', err.req, err.code, err.message, err.context);
 });
 
 // Database setup
