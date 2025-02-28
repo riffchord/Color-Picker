@@ -237,6 +237,10 @@
             color: var(--text-color);
         }
         
+        .info-box.hidden {
+            display: none !important;
+        }
+        
         .info-box i {
             font-size: 1.5rem;
             color: var(--primary-color);
@@ -311,13 +315,32 @@
             </div>
             <div id="no-sessions-info" class="info-box hidden">
                 <i class="fas fa-info-circle"></i>
-                <p>You don't have any recent sessions. Sessions you create or join will appear here for quick access.</p>
-              
+                <div>
+                    <p>You don't have any recent sessions. Sessions you create or join will appear here for quick access.</p>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        // Initialize the no-sessions-info element when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            const noSessionsInfo = document.getElementById('no-sessions-info');
+            if (noSessionsInfo) {
+                const recentSessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
+                if (recentSessions.length > 0) {
+                    noSessionsInfo.style.display = 'none';
+                    noSessionsInfo.classList.add('hidden');
+                } else {
+                    noSessionsInfo.style.display = 'flex';
+                    noSessionsInfo.classList.remove('hidden');
+                }
+            }
+            
+            // Load recent sessions after DOM is loaded
+            loadRecentSessions();
+        });
+        
         // Tab switching functionality
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
@@ -333,35 +356,63 @@
 
         // Load recent sessions from localStorage
         function loadRecentSessions() {
-            const recentSessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
+            // Get the elements
             const recentSessionsContainer = document.getElementById('recent-sessions');
             const noSessionsInfo = document.getElementById('no-sessions-info');
+            
+            // Ensure the elements exist
+            if (!recentSessionsContainer || !noSessionsInfo) {
+                console.error('Required elements not found:', { 
+                    recentSessionsContainer: !!recentSessionsContainer, 
+                    noSessionsInfo: !!noSessionsInfo 
+                });
+                return;
+            }
+            
+            // Get sessions from localStorage
+            let recentSessions = [];
+            try {
+                const storedSessions = localStorage.getItem('recentSessions');
+                recentSessions = storedSessions ? JSON.parse(storedSessions) : [];
+                console.log('Loaded recent sessions:', recentSessions);
+            } catch (error) {
+                console.error('Error parsing recent sessions from localStorage:', error);
+                recentSessions = [];
+            }
             
             // Clear previous content
             recentSessionsContainer.innerHTML = '';
             
-            if (recentSessions.length === 0) {
-                // Show the informative message when no sessions exist
+            // Explicitly set display style based on sessions length
+            if (!recentSessions || recentSessions.length === 0) {
+                console.log('No sessions found, showing info message');
+                noSessionsInfo.style.display = 'flex'; // Use flex to match the info-box display style
                 noSessionsInfo.classList.remove('hidden');
                 return;
+            } else {
+                console.log('Sessions found, hiding info message');
+                noSessionsInfo.style.display = 'none';
+                noSessionsInfo.classList.add('hidden');
             }
-            
-            // Hide the informative message if sessions exist
-            noSessionsInfo.classList.add('hidden');
             
             // Add each session to the list
             recentSessions.forEach(session => {
+                // Extract the base session name (without the unique identifier) for display purposes
+                const fullSessionName = session.name;
+                const baseSessionName = fullSessionName.split('-').slice(0, -1).join('-') || fullSessionName;
+                
                 const sessionItem = document.createElement('div');
                 sessionItem.className = 'session-item';
                 sessionItem.innerHTML = `
-                    <div class="session-name">${session.name}</div>
+                    <div class="session-name" title="Full session ID: ${fullSessionName}">${baseSessionName}</div>
                     <div class="session-actions">
-                        <button class="btn-small" onclick="joinSession('${session.name}', '${session.password}', 'manage')">Manage</button>
-                        <button class="btn-small" onclick="joinSession('${session.name}', '${session.password}', 'view')">View</button>
-                        <button class="btn-small btn-delete" onclick="deleteSession('${session.name}')"><i class="fas fa-trash"></i></button>
+                        <button class="btn-small" onclick="joinSession('${fullSessionName}', '${session.password}', 'manage')">Manage</button>
+                        <button class="btn-small" onclick="joinSession('${fullSessionName}', '${session.password}', 'view')">View</button>
+                        <button class="btn-small btn-delete" onclick="deleteSession('${fullSessionName}')"><i class="fas fa-trash"></i></button>
                     </div>
                 `;
                 recentSessionsContainer.appendChild(sessionItem);
+                console.log('Added session to list:', baseSessionName);
             });
         }
 
@@ -460,14 +511,18 @@
                 return;
             }
             
-            // Create the session on the server
+            // Generate a unique identifier (3-digit random number)
+            const uniqueId = Math.floor(100 + Math.random() * 900);
+            const uniqueSessionName = `${sessionName}-${uniqueId}`;
+            
+            // Create the session on the server with the unique name
             fetch('./api/sessions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    name: sessionName,
+                    name: uniqueSessionName,
                     password: sessionPassword
                 })
             })
@@ -485,7 +540,7 @@
                 // Add to recent sessions (just for UI convenience)
                 const recentSessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
                 recentSessions.unshift({
-                    name: sessionName,
+                    name: uniqueSessionName,
                     password: sessionPassword,
                     lastAccessed: new Date().toISOString()
                 });
@@ -499,7 +554,7 @@
                 
                 // Show success message
                 errorElement.classList.add('hidden');
-                successElement.textContent = 'Session created successfully!';
+                successElement.innerHTML = `Session created successfully!<br>Share this ID with others: <strong>${uniqueSessionName}</strong>`;
                 successElement.classList.remove('hidden');
                 
                 // Reset form
@@ -512,16 +567,18 @@
                 setTimeout(() => {
                     // Store current session
                     localStorage.setItem('currentSession', JSON.stringify({
-                        name: sessionName,
+                        name: uniqueSessionName,
                         password: sessionPassword
                     }));
                     
                     // Redirect to questions management page
-                    window.location.href = `questions.html?session=${encodeURIComponent(sessionName)}`;
+                    window.location.href = `questions.html?session=${encodeURIComponent(uniqueSessionName)}`;
                 }, 1000);
             })
             .catch(error => {
                 console.error('Error creating session:', error);
+                
+                // Show the error
                 errorElement.textContent = error.message || 'Error creating session. Please try again.';
                 errorElement.classList.remove('hidden');
                 successElement.classList.add('hidden');
@@ -543,7 +600,10 @@
 
         // Function to delete a session
         function deleteSession(sessionName) {
-            if (!confirm(`Are you sure you want to delete the session "${sessionName}"?`)) {
+            // Extract the base session name for display purposes
+            const baseSessionName = sessionName.split('-').slice(0, -1).join('-') || sessionName;
+            
+            if (!confirm(`Are you sure you want to delete the session "${baseSessionName}"?`)) {
                 return;
             }
             
@@ -606,7 +666,7 @@
                 loadRecentSessions();
                 
                 // Show success message
-                alert(`Session "${sessionName}" has been removed from your recent sessions.`);
+                alert(`Session "${baseSessionName}" has been removed from your recent sessions.`);
             })
             .catch(error => {
                 console.error('Error deleting session:', error);
@@ -616,13 +676,10 @@
                     recentSessions.splice(sessionIndex, 1);
                     localStorage.setItem('recentSessions', JSON.stringify(recentSessions));
                     loadRecentSessions();
-                    alert(`Session "${sessionName}" has been removed from your recent sessions.`);
+                    alert(`Session "${baseSessionName}" has been removed from your recent sessions.`);
                 }
             });
         }
-
-        // Load recent sessions on page load
-        loadRecentSessions();
     </script>
 </body>
 </html> 

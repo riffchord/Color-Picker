@@ -447,13 +447,62 @@
         .back-link i {
             margin-right: 5px;
         }
+
+        .view-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
+        .session-name-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .copy-button {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 3px;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            width: auto;
+        }
+
+        .copy-button:hover {
+            color: #1689c3;
+            background: none;
+            box-shadow: none;
+        }
+
+        .session-name-display {
+            font-size: 1.1rem;
+            color: var(--primary-color);
+            font-weight: 600;
+            background-color: rgba(28, 156, 217, 0.1);
+            padding: 5px 10px;
+            border-radius: var(--card-radius);
+            margin-bottom: 8px;
+            border: 1px dashed var(--primary-color);
+        }
     </style>
 </head>
 <body>
     <div class="header-container">
         <a href="question-index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Sessions</a>
         <h1>Live Question Management</h1>
-        <a href="#" id="view-link" class="view-link" target="_blank"><i class="fas fa-external-link-alt"></i> Open View</a>
+        <div class="view-container">
+            <div class="session-name-container">
+                <div id="session-name-display" class="session-name-display"></div>
+                <button id="copy-session-button" class="copy-button" title="Copy session ID to clipboard">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+            <a href="#" id="view-link" class="view-link" target="_blank"><i class="fas fa-external-link-alt"></i> Open View</a>
+        </div>
     </div>
     <div class="kanban">
         <div class="column" id="new">
@@ -518,7 +567,7 @@
             console.log('Received new question:', question);
             
             // Check if this question was just added by this client
-            if (recentlyAddedQuestions.has(question.id)) {
+            if (recentlyAddedQuestions.has(parseInt(question.id))) {
                 console.log('Ignoring duplicate question that was just added locally:', question.id);
                 return;
             }
@@ -530,7 +579,8 @@
             console.log('Received updated question:', question);
             
             // Check if this question was just updated by this client
-            if (recentlyUpdatedQuestions.has(question.id)) {
+            // Ensure we're comparing numbers with numbers
+            if (recentlyUpdatedQuestions.has(parseInt(question.id))) {
                 console.log('Ignoring duplicate update that was just made locally:', question.id);
                 return;
             }
@@ -559,7 +609,8 @@
             console.log('Received deleted question:', data);
             
             // Check if this question was just deleted by this client
-            if (recentlyDeletedQuestions.has(data.id)) {
+            // Ensure we're comparing numbers with numbers
+            if (recentlyDeletedQuestions.has(parseInt(data.id))) {
                 console.log('Ignoring duplicate deletion that was just made locally:', data.id);
                 return;
             }
@@ -726,17 +777,17 @@
                 console.log('Saved new question:', question);
                 
                 // Add the question ID to the recently added set to prevent duplicates
-                // Store the ID as a number to ensure consistent comparison
-                recentlyAddedQuestions.add(question.id);
+                // Ensure we're storing a number for consistent comparison
+                recentlyAddedQuestions.add(parseInt(question.id));
                 
                 // Set a timeout to remove the ID from the set after a short delay
                 // This helps prevent memory leaks while still catching duplicates
                 setTimeout(() => {
-                    recentlyAddedQuestions.delete(question.id);
+                    recentlyAddedQuestions.delete(parseInt(question.id));
                 }, 5000);
                 
-                // Add the new question to the column
-                addQuestionToColumn('new', question);
+                // Don't add the question to the UI here - it will be added via the Socket.IO event
+                // This prevents duplicate questions
                 
                 // Remove the input container and show the "add new question" button
                 const columnElement = inputContainer.closest('.column');
@@ -868,11 +919,12 @@
                 console.log('Updated question:', question);
                 
                 // Add the question ID to the recently updated set to prevent duplicates
-                recentlyUpdatedQuestions.add(question.id);
+                // Ensure we're storing a number for consistent comparison
+                recentlyUpdatedQuestions.add(parseInt(question.id));
                 
                 // Set a timeout to remove the ID from the set after a short delay
                 setTimeout(() => {
-                    recentlyUpdatedQuestions.delete(question.id);
+                    recentlyUpdatedQuestions.delete(parseInt(question.id));
                 }, 5000);
                 
                 // Remove updating indicator
@@ -976,6 +1028,7 @@
                 console.log('Deleted question:', result);
                 
                 // Add the question ID to the recently deleted set to prevent duplicates
+                // Ensure we're storing a number for consistent comparison
                 recentlyDeletedQuestions.add(parseInt(questionId));
                 
                 // Set a timeout to remove the ID from the set after a short delay
@@ -1102,11 +1155,12 @@
                 console.log('Updated question status:', updatedQuestion);
                 
                 // Add the question ID to the recently updated set to prevent duplicates
-                recentlyUpdatedQuestions.add(updatedQuestion.id);
+                // Ensure we're storing a number for consistent comparison
+                recentlyUpdatedQuestions.add(parseInt(updatedQuestion.id));
                 
                 // Set a timeout to remove the ID from the set after a short delay
                 setTimeout(() => {
-                    recentlyUpdatedQuestions.delete(updatedQuestion.id);
+                    recentlyUpdatedQuestions.delete(parseInt(updatedQuestion.id));
                 }, 5000);
                 
                 // Remove updating indicator
@@ -1161,13 +1215,23 @@
                 return;
             }
             
-            // Update page title with session name
-            document.title = `Questions - ${sessionName}`;
+            // Extract the base session name (without the unique identifier) for display purposes
+            const baseSessionName = sessionName.split('-').slice(0, -1).join('-') || sessionName;
+            
+            // Update page title with base session name
+            document.title = `Questions - ${baseSessionName}`;
             
             // Update view link with the correct session
             const viewLink = document.getElementById('view-link');
             if (viewLink) {
                 viewLink.href = `question-view.html?session=${encodeURIComponent(sessionName)}`;
+            }
+            
+            // Display full session name for easy sharing
+            const sessionNameDisplay = document.getElementById('session-name-display');
+            if (sessionNameDisplay) {
+                sessionNameDisplay.textContent = `Session ID: ${sessionName}`;
+                sessionNameDisplay.title = `Share this exact session name with others to connect`;
             }
             
             // Fetch questions for this session
@@ -1219,6 +1283,32 @@
                     alert(`Failed to load questions: ${error.message}`);
                 });
         }
+
+        // Function to copy session name to clipboard
+        function copySessionName() {
+            const sessionName = new URLSearchParams(window.location.search).get('session');
+            if (sessionName) {
+                navigator.clipboard.writeText(sessionName)
+                    .then(() => {
+                        const copyButton = document.getElementById('copy-session-button');
+                        const originalHTML = copyButton.innerHTML;
+                        copyButton.innerHTML = '<i class="fas fa-check"></i>';
+                        copyButton.style.color = '#2ecc71';
+                        
+                        setTimeout(() => {
+                            copyButton.innerHTML = originalHTML;
+                            copyButton.style.color = '';
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Could not copy text: ', err);
+                        alert('Failed to copy session name to clipboard');
+                    });
+            }
+        }
+
+        // Add event listener to copy button
+        document.getElementById('copy-session-button').addEventListener('click', copySessionName);
 
         // Load questions when page loads
         loadQuestions();
