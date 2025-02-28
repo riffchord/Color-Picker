@@ -6,7 +6,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>Live Chat Questions</title>
-    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
             --primary-color: #1C9CD9;
@@ -445,63 +445,17 @@
         // Track recently deleted questions to prevent duplicates
         const recentlyDeletedQuestions = new Set();
         
-        // Initialize Socket.IO connection with options for cross-domain
-        const socket = io({
-            path: '/socket.io',
-            transports: ['polling', 'websocket'],
-            reconnection: true,
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000,
-            timeout: 20000,
-            autoConnect: true,
-            forceNew: true
-        });
-        
-        // Add connection status handling
-        socket.on('connect', () => {
-            console.log('Socket.IO connected successfully with ID:', socket.id);
-            
-            // Get session from URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const sessionName = urlParams.get('session');
-            
-            // Join the session room
-            if (sessionName) {
-                socket.emit('join-session', sessionName);
-                console.log('Joining session:', sessionName);
-            }
-        });
-        
-        socket.on('connect_error', (error) => {
-            console.error('Socket.IO connection error:', error);
-        });
-
-        socket.on('connect_timeout', () => {
-            console.error('Socket.IO connection timeout');
-        });
-
-        socket.on('reconnect', (attemptNumber) => {
-            console.log('Socket.IO reconnected after', attemptNumber, 'attempts');
-            
-            // Re-join session after reconnection
-            const urlParams = new URLSearchParams(window.location.search);
-            const sessionName = urlParams.get('session');
-            if (sessionName) {
-                socket.emit('join-session', sessionName);
-            }
-        });
-
-        socket.on('reconnect_error', (error) => {
-            console.error('Socket.IO reconnection error:', error);
-        });
-
-        socket.on('reconnect_failed', () => {
-            console.error('Socket.IO reconnection failed after all attempts');
-        });
+        // Initialize Socket.IO connection
+        const socket = io();
         
         // Get session from URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const sessionName = urlParams.get('session');
+        
+        // Join the session room
+        if (sessionName) {
+            socket.emit('join-session', sessionName);
+        }
         
         // Listen for real-time updates
         socket.on('question-added', (question) => {

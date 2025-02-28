@@ -6,7 +6,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>Question View</title>
-    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
             --primary-color: #1C9CD9;
@@ -281,7 +281,7 @@
     
     <div class="session-info" id="session-info"></div>
 
-    <div class="controls">
+        <div class="controls">
         <div class="control-handle">Settings</div>
         <div class="control-row">
             <div class="control-group">
@@ -400,71 +400,25 @@
         let currentQuestion = null;
         let controlsTimeout;
 
-        // Initialize Socket.IO connection with options for cross-domain
-        const socket = io({
-            path: '/socket.io',
-            transports: ['polling', 'websocket'],
-            reconnection: true,
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000,
-            timeout: 20000,
-            autoConnect: true,
-            forceNew: true
-        });
+        // Initialize Socket.IO connection
+        const socket = io();
         
-        // Add connection status handling
-        socket.on('connect', () => {
-            console.log('Socket.IO connected successfully with ID:', socket.id);
+        // Get session from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionName = urlParams.get('session');
+        
+        // Join the session room if a session is specified
+        if (sessionName) {
+            socket.emit('join-session', sessionName);
             
-            // Get session from URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const sessionName = urlParams.get('session');
-            
-            // Join the session room if a session is specified
-            if (sessionName) {
-                socket.emit('join-session', sessionName);
-                console.log('Joining session:', sessionName);
-                
-                // Update page title and session info
-                document.title = `Question View - ${sessionName}`;
-                sessionInfo.textContent = `Session: ${sessionName}`;
-                
-                // Fetch current question after connection is established
-                fetchCurrentQuestion(sessionName);
+            // Update page title and session info
+            document.title = `Question View - ${sessionName}`;
+            sessionInfo.textContent = `Session: ${sessionName}`;
             } else {
-                // If no session is specified, just show blank
-                document.body.style.background = 'transparent';
-                questionContainer.style.display = 'none';
-            }
-        });
-        
-        socket.on('connect_error', (error) => {
-            console.error('Socket.IO connection error:', error);
-        });
-        
-        socket.on('connect_timeout', () => {
-            console.error('Socket.IO connection timeout');
-        });
-
-        socket.on('reconnect', (attemptNumber) => {
-            console.log('Socket.IO reconnected after', attemptNumber, 'attempts');
-            
-            // Re-join session after reconnection
-            const urlParams = new URLSearchParams(window.location.search);
-            const sessionName = urlParams.get('session');
-            if (sessionName) {
-                socket.emit('join-session', sessionName);
-                fetchCurrentQuestion(sessionName);
-            }
-        });
-
-        socket.on('reconnect_error', (error) => {
-            console.error('Socket.IO reconnection error:', error);
-        });
-
-        socket.on('reconnect_failed', () => {
-            console.error('Socket.IO reconnection failed after all attempts');
-        });
+            // If no session is specified, just show blank
+            document.body.style.background = 'transparent';
+            questionContainer.style.display = 'none';
+        }
         
         // Listen for question updates
         socket.on('question-updated', (question) => {
@@ -809,16 +763,11 @@
         }
 
         // Initial fetch for the current on-air question
-        function fetchCurrentQuestion(sessionName) {
+        function fetchCurrentQuestion() {
+            // Get session from URL parameters
             if (!sessionName) {
-                const urlParams = new URLSearchParams(window.location.search);
-                sessionName = urlParams.get('session');
-                if (!sessionName) {
-                    return;
-                }
+                return;
             }
-            
-            console.log('Fetching current on-air question for session:', sessionName);
             
             fetch(`./api/questions/on_air?session=${encodeURIComponent(sessionName)}`)
                 .then(response => {
@@ -875,6 +824,7 @@
             document.body.style.background = 'transparent';
             
             loadSettings();
+            fetchCurrentQuestion(); // Initial fetch
             
             // Force apply settings after a short delay to ensure background is applied
             setTimeout(() => {
