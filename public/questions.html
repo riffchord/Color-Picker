@@ -6,7 +6,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>Live Chat Questions</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
     <style>
         :root {
             --primary-color: #1C9CD9;
@@ -445,17 +445,36 @@
         // Track recently deleted questions to prevent duplicates
         const recentlyDeletedQuestions = new Set();
         
-        // Initialize Socket.IO connection
-        const socket = io();
+        // Initialize Socket.IO connection with options for cross-domain
+        const socket = io(window.location.origin, {
+            path: '/socket.io',
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
+        });
+        
+        // Add connection status handling
+        socket.on('connect', () => {
+            console.log('Socket.IO connected successfully');
+            
+            // Get session from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionName = urlParams.get('session');
+            
+            // Join the session room
+            if (sessionName) {
+                socket.emit('join-session', sessionName);
+            }
+        });
+        
+        socket.on('connect_error', (error) => {
+            console.error('Socket.IO connection error:', error);
+        });
         
         // Get session from URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const sessionName = urlParams.get('session');
-        
-        // Join the session room
-        if (sessionName) {
-            socket.emit('join-session', sessionName);
-        }
         
         // Listen for real-time updates
         socket.on('question-added', (question) => {
